@@ -1,72 +1,2807 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LQIP - Laboratório Estatístico</title>
+# LOTOCE QUANT LAB V4.0
 
-    <!-- 1. COLE AQUI O SEU CSS PARA MANTER O LAYOUT INTACTO -->
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        /* Cole todo o seu CSS de botões, gradientes e cartões aqui */
-    </style>
+## PROMPT MASTER DEFINITIVO — SISTEMA QUANTITATIVO DE ANÁLISE, BACKTESTING E RANKING
 
-    <!-- 2. IMPORTAÇÕES NECESSÁRIAS (Sem instalar nada) -->
-    <!-- React -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel (O segredo para o código não vazar na tela) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- XLSX (Para a leitura da sua planilha Excel) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-</head>
-<body>
-    <!-- Aqui é onde o React vai injetar o seu sistema -->
-    <div id="root"></div>
+---
 
-    <!-- 3. O type="text/babel" É OBRIGATÓRIO AQUI -->
-    <script type="text/babel">
-        // COLE AQUI TODA A SUA LÓGICA JAVASCRIPT 
+# 0. INSTRUÇÃO PRINCIPAL — LEIA ANTES DE FAZER QUALQUER COISA
 
-        const { useState, useEffect, useRef } = React;
+Você é o engenheiro de software responsável pela implementação do **LotoCE Quant Lab V4.0**.
 
-        function SistemaEstatistico() {
-            // Seus estados (ex: draws, loading, activeTab)
-            const [activeTab, setActiveTab] = useState('IMPORT');
-            const [draws, setDraws] = useState([]);
-            const fileInputRef = useRef(null);
+Este projeto será desenvolvido utilizando:
 
-            // ... COLE AQUI O SEU "MOTOR QUANTITATIVO" ...
+* GitHub para código-fonte;
+* Render para execução/deploy;
+* PostgreSQL como banco de dados;
+* Python como linguagem principal do backend;
+* API REST para comunicação com o sistema;
+* bibliotecas estatísticas e de machine learning quando justificadas.
 
-            // Renderização e Layout Intacto
-            return (
-                <div>
-                    <h1>LQIP - Quant Intelligence Platform</h1>
-                    <p>Totalmente Client-Side (Sem Servidor)</p>
-                    
-                    {/* COLE AQUI O RESTANTE DO SEU RETURN (O LAYOUT) */}
-                    
-                    <div>
-                        {['IMPORT', 'RANKING', 'BACKTEST'].map(tab => (
-                            <button key={tab} onClick={() => setActiveTab(tab)}>
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
+## ATENÇÃO
 
-                    {activeTab === 'IMPORT' && (
-                        <div>
-                            <h2>IMPORTAR EXCEL</h2>
-                            {/* Resto do seu código de importação */}
-                        </div>
-                    )}
-                </div>
-            );
-        }
+Este documento é uma **especificação de implementação**, não uma solicitação para você apenas explicar arquitetura.
 
-        // Inicializa o sistema na div "root"
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<SistemaEstatistico />);
-    </script>
-</body>
-</html>
+### EU QUERO O CÓDIGO FUNCIONAL.
+
+Não quero:
+
+* apenas pseudocódigo;
+* apenas exemplos;
+* apenas schema;
+* apenas trechos;
+* apenas explicação;
+* uma lista de tarefas para eu executar;
+* perguntas a cada etapa;
+* confirmação antes de cada módulo;
+* criação de arquivos isolados sem integração.
+
+### SUA RESPONSABILIDADE
+
+Inspecione o projeto existente, identifique a stack, preserve o que já funciona e implemente o sistema completo descrito neste documento.
+
+Depois:
+
+1. escreva os arquivos;
+2. integre os módulos;
+3. execute os testes;
+4. encontre os erros;
+5. corrija os erros;
+6. execute novamente;
+7. valide a aplicação;
+8. deixe o projeto pronto para GitHub + Render.
+
+**Não pare no meio para perguntar se deve continuar.**
+
+Se houver uma decisão técnica razoável que não esteja especificada, escolha a solução mais simples, robusta e compatível com a arquitetura existente.
+
+Somente interrompa para perguntar se existir uma ambiguidade que torne tecnicamente impossível continuar.
+
+---
+
+# 1. IDENTIDADE DO SISTEMA
+
+O sistema será denominado:
+
+# LotoCE Quant Lab V4.0 — LQIP
+
+LQIP significa:
+
+**LotoCE Quant Intelligence Platform**
+
+O sistema é um laboratório quantitativo destinado a:
+
+* ingestão de dados;
+* limpeza;
+* normalização;
+* análise estatística;
+* análise temporal;
+* descoberta de padrões;
+* modelagem probabilística;
+* machine learning;
+* simulação;
+* backtesting;
+* comparação com baseline;
+* consenso entre modelos;
+* ranking de milhares;
+* avaliação contínua dos modelos;
+* auditoria e explicabilidade.
+
+---
+
+# 2. OBJETIVO CIENTÍFICO
+
+O objetivo NÃO é afirmar que um resultado futuro pode ser conhecido com certeza.
+
+O objetivo é:
+
+> encontrar, medir, testar e validar evidências estatísticas que possam produzir uma classificação relativa das milhares, verificando se essa classificação apresenta desempenho diferente do esperado pelo acaso quando submetida a backtesting rigoroso.
+
+O sistema deve trabalhar com:
+
+* probabilidade;
+* evidência;
+* incerteza;
+* validação;
+* comparação;
+* desempenho fora da amostra.
+
+Nunca apresentar uma previsão como certeza.
+
+Nunca afirmar:
+
+> "Esta milhar vai sair."
+
+Utilizar linguagem como:
+
+> "Esta milhar apresentou maior score relativo segundo os modelos atualmente validados."
+
+---
+
+# 3. PROBABILIDADE TEÓRICA
+
+Para milhares de quatro dígitos:
+
+```text
+0000
+0001
+0002
+...
+9999
+```
+
+existem 10.000 possibilidades.
+
+A probabilidade teórica uniforme de uma milhar específica em uma posição específica é:
+
+```text
+1 / 10.000
+```
+
+ou:
+
+```text
+0,01%
+```
+
+Essa referência deve existir no sistema como **baseline teórico**.
+
+Não confundir:
+
+```text
+probabilidade matemática teórica
+```
+
+com:
+
+```text
+score estatístico
+```
+
+ou:
+
+```text
+probabilidade estimada/calibrada por modelo.
+```
+
+---
+
+# 4. REGRA FUNDAMENTAL — BASELINE
+
+Todo modelo deve ser comparado contra pelo menos:
+
+### Baseline A — Uniforme
+
+Todas as milhares possuem a mesma probabilidade teórica.
+
+### Baseline B — Frequência histórica
+
+Ranking baseado apenas em frequência histórica.
+
+### Baseline C — Frequência recente
+
+Ranking baseado apenas em janela recente.
+
+Quando aplicável, criar outros baselines.
+
+Um modelo só pode ser considerado potencialmente útil se demonstrar desempenho superior aos baselines de forma consistente e fora da amostra.
+
+---
+
+# 5. REGRA FUNDAMENTAL — RECÊNCIA
+
+O sistema deve dar **forte importância ao comportamento recente**, porque o objetivo é avaliar o estado atual do processo.
+
+Porém, não deve simplesmente ignorar o histórico antigo.
+
+Utilizar simultaneamente:
+
+## LONGO PRAZO
+
+Todo o histórico disponível.
+
+## MÉDIO PRAZO
+
+Janela configurável.
+
+## CURTO PRAZO
+
+Janela configurável, com maior peso para dados recentes.
+
+Implementar:
+
+* rolling windows;
+* frequência recente;
+* frequência histórica;
+* frequência ponderada;
+* EWMA;
+* exponential decay;
+* recency score;
+* comparação recente vs histórico;
+* mudança de regime;
+* change points.
+
+---
+
+# 6. PRINCÍPIO DA RECÊNCIA ADAPTATIVA
+
+Não assumir antecipadamente que:
+
+> "os últimos X resultados são sempre melhores."
+
+O sistema deve testar qual janela apresenta melhor desempenho no backtesting.
+
+Exemplo:
+
+```text
+50 concursos
+100 concursos
+250 concursos
+500 concursos
+1000 concursos
+histórico completo
+```
+
+Essas janelas devem ser configuráveis.
+
+O backtesting deve determinar quais janelas apresentam melhor estabilidade.
+
+---
+
+# 7. TRÊS SORTEIOS POR DIA
+
+O sistema possui três sessões:
+
+```text
+MANHA
+TARDE
+NOITE
+```
+
+As três sessões pertencem ao **mesmo banco e ao mesmo histórico**.
+
+NÃO criar:
+
+```text
+database_manha
+database_tarde
+database_noite
+```
+
+NÃO criar históricos separados.
+
+A sessão é apenas uma dimensão do evento.
+
+Exemplo:
+
+```text
+13/07/2026 MANHA
+13/07/2026 TARDE
+13/07/2026 NOITE
+```
+
+São três eventos diferentes dentro da mesma linha temporal.
+
+---
+
+# 8. ORDEM TEMPORAL
+
+A sequência padrão deve ser:
+
+```text
+MANHÃ
+↓
+TARDE
+↓
+NOITE
+↓
+MANHÃ DO DIA SEGUINTE
+```
+
+Essa ordem é fundamental para:
+
+* walk-forward;
+* Markov;
+* análise temporal;
+* recência;
+* mudança de regime;
+* prevenção de leakage.
+
+---
+
+# 9. DADOS DE ENTRADA
+
+O sistema deverá aceitar três formas principais:
+
+## A — EXCEL
+
+Arquivos:
+
+```text
+.xlsx
+.xls
+```
+
+## B — CSV
+
+Arquivos:
+
+```text
+.csv
+```
+
+## C — COLAR TEXTO
+
+O usuário poderá colar diretamente o conteúdo bruto dos resultados.
+
+---
+
+# 10. EXEMPLO REAL DE FORMATO
+
+O parser deve entender estruturas como:
+
+```text
+Extração Tarde II
+Dia 13/07/2026
+
+1° PRÊMIO
+5201
+
+2° PRÊMIO
+3376
+
+3° PRÊMIO
+5510
+
+4° PRÊMIO
+3706
+
+5° PRÊMIO
+8135
+
+6° PRÊMIO
+2541
+
+7° PRÊMIO
+2670
+
+8° PRÊMIO
+8374
+
+9° PRÊMIO
+6690
+
+10° PRÊMIO
+8961
+```
+
+Também:
+
+```text
+Extração Tarde
+Dia 13/07/2026
+
+1° PRÊMIO
+931
+
+2° PRÊMIO
+5824
+
+3° PRÊMIO
+5711
+
+4° PRÊMIO
+9309
+
+5° PRÊMIO
+1160
+
+6° PRÊMIO
+9042
+
+7° PRÊMIO
+6842
+
+8° PRÊMIO
+5486
+
+9° PRÊMIO
+7281
+
+10° PRÊMIO
+2323
+```
+
+Também:
+
+```text
+Extração Manhã
+Dia 13/07/2026
+
+1° PRÊMIO
+8626
+
+2° PRÊMIO
+6871
+
+3° PRÊMIO
+4749
+
+4° PRÊMIO
+957
+
+5° PRÊMIO
+6232
+
+6° PRÊMIO
+7339
+
+7° PRÊMIO
+1736
+
+8° PRÊMIO
+4417
+
+9° PRÊMIO
+6717
+
+10° PRÊMIO
+5614
+```
+
+---
+
+# 11. NORMALIZAÇÃO DAS MILHARES
+
+Todos os resultados devem possuir exatamente quatro dígitos.
+
+Exemplos:
+
+```text
+957  → 0957
+931  → 0931
+433  → 0433
+1    → 0001
+25   → 0025
+5201 → 5201
+```
+
+Nunca armazenar a milhar como inteiro.
+
+Armazenar como:
+
+```text
+CHAR(4)
+```
+
+ou equivalente seguro.
+
+---
+
+# 12. POSIÇÕES
+
+Cada extração possui:
+
+```text
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+```
+
+Cada posição deve ser armazenada separadamente.
+
+Não assumir automaticamente que as dez posições sejam dez observações independentes.
+
+O sistema deverá testar/modelar essa estrutura corretamente.
+
+---
+
+# 13. IMPORTAÇÃO EXCEL — FUNCIONALIDADE OBRIGATÓRIA
+
+Implementar efetivamente a importação Excel.
+
+A aplicação deverá possuir endpoint funcional para receber arquivo.
+
+Exemplo:
+
+```text
+POST /api/import/excel
+```
+
+O backend deverá:
+
+1. receber arquivo;
+2. validar extensão;
+3. validar tamanho;
+4. abrir Excel;
+5. detectar planilhas;
+6. identificar colunas;
+7. identificar data;
+8. identificar sessão;
+9. identificar posição;
+10. identificar número;
+11. normalizar números;
+12. validar registros;
+13. detectar duplicidades;
+14. detectar registros inválidos;
+15. apresentar erros;
+16. inserir registros válidos;
+17. registrar importação;
+18. retornar resumo da operação.
+
+Utilizar bibliotecas adequadas, como:
+
+```text
+pandas
+openpyxl
+```
+
+quando compatíveis com a stack.
+
+---
+
+# 14. IMPORTAÇÃO CSV
+
+Criar:
+
+```text
+POST /api/import/csv
+```
+
+Suportar:
+
+* UTF-8;
+* delimitador configurável;
+* cabeçalho;
+* identificação das colunas;
+* normalização;
+* validação;
+* deduplicação.
+
+---
+
+# 15. IMPORTAÇÃO POR TEXTO
+
+Criar:
+
+```text
+POST /api/import/text
+```
+
+Receber texto bruto.
+
+Detectar:
+
+* data;
+* sessão;
+* posições;
+* números.
+
+Aceitar pequenas variações:
+
+```text
+1° PRÊMIO
+1º PRÊMIO
+1o PRÊMIO
+1 PRÊMIO
+```
+
+e variações de espaçamento.
+
+---
+
+# 16. IMPORTAÇÃO MÚLTIPLA
+
+Uma única importação pode conter:
+
+```text
+MANHA
+TARDE
+NOITE
+```
+
+de várias datas.
+
+O sistema deve identificar cada bloco.
+
+Não exigir que o usuário envie três arquivos separados.
+
+---
+
+# 17. VALIDAÇÃO DA IMPORTAÇÃO
+
+Antes de gravar:
+
+verificar:
+
+* data;
+* sessão;
+* posição;
+* número;
+* duplicidade;
+* formato;
+* registros incompletos;
+* datas inválidas;
+* sessões desconhecidas.
+
+Retornar relatório:
+
+```text
+total_linhas
+registros_validos
+registros_invalidos
+duplicados
+inseridos
+ignorados
+erros
+```
+
+---
+
+# 18. BANCO DE DADOS — ARQUITETURA ÚNICA
+
+Utilizar PostgreSQL.
+
+Tabelas mínimas:
+
+```text
+draws
+draw_results
+import_jobs
+models
+backtest_runs
+prediction_runs
+frozen_prediction_items
+prediction_results
+audit_events
+```
+
+---
+
+# 19. TABELA DRAWS
+
+Campos mínimos:
+
+```text
+id UUID PRIMARY KEY
+draw_date DATE NOT NULL
+session
+contest_number
+draw_time
+is_time_official
+event_datetime
+source
+imported_at
+created_at
+```
+
+Constraint de unicidade adequada para impedir duplicidade.
+
+---
+
+# 20. TABELA DRAW_RESULTS
+
+Campos:
+
+```text
+id
+draw_id
+position
+number
+thousands
+hundreds
+tens
+units
+created_at
+```
+
+Constraints:
+
+```text
+position BETWEEN 1 AND 10
+```
+
+e:
+
+```text
+number =~ '^[0-9]{4}$'
+```
+
+e:
+
+```text
+UNIQUE(draw_id, position)
+```
+
+---
+
+# 21. EVENT_DATETIME
+
+Se o arquivo fornecer horário real:
+
+```text
+is_time_official = TRUE
+```
+
+e utilizar o horário fornecido.
+
+Se não fornecer:
+
+criar ordem temporal lógica determinística:
+
+```text
+MANHA
+TARDE
+NOITE
+```
+
+Mas:
+
+```text
+is_time_official = FALSE
+```
+
+O sistema nunca deve apresentar o horário lógico como horário oficial.
+
+---
+
+# 22. HISTÓRICO ÚNICO
+
+O histórico deverá ser consultado como uma única série temporal.
+
+Exemplo:
+
+```text
+13/07 MANHA
+13/07 TARDE
+13/07 NOITE
+14/07 MANHA
+14/07 TARDE
+14/07 NOITE
+```
+
+Filtros por sessão serão opcionais.
+
+---
+
+# 23. ANÁLISE POR SESSÃO
+
+O sistema deve permitir:
+
+### Todas as sessões
+
+```text
+MANHA + TARDE + NOITE
+```
+
+### Somente manhã
+
+### Somente tarde
+
+### Somente noite
+
+### Comparação entre sessões
+
+Isso permite verificar se existe alguma diferença estatística observável entre sessões.
+
+Não assumir previamente que existe.
+
+---
+
+# 24. ESTATÍSTICA CLÁSSICA
+
+Implementar:
+
+* frequência absoluta;
+* frequência relativa;
+* frequência acumulada;
+* média;
+* mediana;
+* moda;
+* desvio padrão;
+* variância;
+* coeficiente de variação;
+* quartis;
+* percentis;
+* distribuição.
+
+Aplicar:
+
+* histórico completo;
+* médio prazo;
+* curto prazo.
+
+---
+
+# 25. FREQUÊNCIA RECENTE
+
+Calcular:
+
+```text
+frequência histórica
+frequência últimos N
+frequência últimos M
+frequência últimos K
+```
+
+Comparar:
+
+```text
+recente vs histórico
+```
+
+Gerar:
+
+```text
+recency_score
+```
+
+---
+
+# 26. EWMA
+
+Implementar Exponentially Weighted Moving Average.
+
+O peso dos dados diminui conforme envelhecem.
+
+Permitir parâmetros configuráveis.
+
+Testar diferentes valores durante o backtesting.
+
+---
+
+# 27. DELAY ENGINE
+
+Calcular:
+
+* atraso atual;
+* atraso médio;
+* atraso máximo;
+* atraso mínimo;
+* distribuição do atraso;
+* comportamento após atrasos semelhantes.
+
+IMPORTANTE:
+
+Nunca assumir:
+
+> "está atrasado, portanto está próximo de sair."
+
+Essa hipótese deve ser testada empiricamente.
+
+Se não houver evidência, o sistema deve dizer isso.
+
+---
+
+# 28. BAYESIAN ENGINE
+
+Implementar atualização Bayesiana.
+
+Produzir:
+
+```text
+prior
+likelihood
+posterior
+```
+
+Registrar parâmetros.
+
+Explicar as evidências.
+
+Não apresentar Bayes como garantia.
+
+---
+
+# 29. MARKOV ENGINE
+
+Implementar análise de transições.
+
+Testar:
+
+```text
+milhar → milhar
+centena → centena
+final → final
+grupo → grupo
+```
+
+Calcular:
+
+```text
+P(B|A)
+```
+
+Comparar contra independência.
+
+Se a dependência não apresentar evidência robusta, reduzir o peso do modelo.
+
+---
+
+# 30. AUTOCORRELATION ENGINE
+
+Calcular autocorrelação para diferentes representações:
+
+* dígitos;
+* finais;
+* grupos;
+* frequência;
+* características derivadas.
+
+Testar diferentes lags.
+
+---
+
+# 31. INFORMATION ENGINE
+
+Implementar:
+
+* entropia;
+* informação mútua;
+* concentração;
+* dispersão;
+* dependência;
+* divergência quando apropriado.
+
+O objetivo é verificar se existe informação além do esperado pelo baseline.
+
+---
+
+# 32. CHANGE POINT ENGINE
+
+Detectar possíveis mudanças:
+
+* frequência;
+* dispersão;
+* repetição;
+* distribuição;
+* dependência.
+
+Identificar possíveis pontos de mudança.
+
+Validar se as mudanças são estatisticamente relevantes.
+
+---
+
+# 33. REGIME DETECTION ENGINE
+
+Classificar o comportamento atual, quando houver evidência:
+
+```text
+ESTÁVEL
+ALTA REPETIÇÃO
+ALTA DISPERSÃO
+VOLATILIDADE
+MUDANÇA ESTRUTURAL
+```
+
+O regime deve ser utilizado para ajustar o peso dos modelos.
+
+---
+
+# 34. CLUSTER ENGINE
+
+Implementar:
+
+* K-Means;
+* DBSCAN;
+* clusterização hierárquica.
+
+Utilizar features adequadas.
+
+Não forçar clusterização se os dados não apresentarem estrutura.
+
+---
+
+# 35. GRAPH INTELLIGENCE ENGINE
+
+Criar representação em grafo quando aplicável.
+
+Nós:
+
+```text
+resultados
+grupos
+finais
+milhares
+```
+
+Arestas:
+
+```text
+transições
+```
+
+Calcular, quando estatisticamente justificável:
+
+* centralidade;
+* comunidades;
+* PageRank;
+* caminhos;
+* influência.
+
+Essas métricas são evidências auxiliares, não prova de previsibilidade.
+
+---
+
+# 36. PATTERN DISCOVERY ENGINE
+
+Pesquisar:
+
+* repetições;
+* sequências;
+* ciclos;
+* combinações;
+* padrões de transição;
+* anomalias;
+* mudanças de regime;
+* estruturas recorrentes.
+
+Toda descoberta deve ser submetida a:
+
+```text
+teste
+↓
+backtest
+↓
+validação fora da amostra
+```
+
+Antes de influenciar o ranking.
+
+---
+
+# 37. MONTE CARLO ENGINE
+
+Criar simulações para comparar o histórico observado contra cenários aleatórios.
+
+Utilizar Monte Carlo para:
+
+* testar significância;
+* estimar distribuição esperada;
+* avaliar estabilidade;
+* comparar padrões observados.
+
+Não utilizar Monte Carlo para criar falsa precisão.
+
+---
+
+# 38. BOOTSTRAP ENGINE
+
+Quando apropriado, implementar bootstrap para:
+
+* intervalos de confiança;
+* estabilidade;
+* variabilidade;
+* robustez das métricas.
+
+---
+
+# 39. MACHINE LEARNING ENGINE
+
+Implementar camada de Machine Learning.
+
+Modelos candidatos:
+
+```text
+Random Forest
+Gradient Boosting
+XGBoost
+LightGBM
+CatBoost
+```
+
+Somente utilizar um modelo no consenso se ele for validado.
+
+---
+
+# 40. DEEP LEARNING
+
+Possíveis modelos experimentais:
+
+```text
+LSTM
+Transformers temporais
+```
+
+Mas:
+
+**NÃO implementar deep learning artificialmente apenas para dizer que existe IA.**
+
+Somente ativar quando:
+
+* houver dados suficientes;
+* houver infraestrutura;
+* houver justificativa;
+* houver validação.
+
+Se não demonstrar vantagem, não recebe peso.
+
+---
+
+# 41. META LEARNING
+
+Criar mecanismo para avaliar o desempenho dos próprios modelos.
+
+Para cada modelo registrar:
+
+```text
+performance_history
+performance_recent
+stability
+calibration
+```
+
+---
+
+# 42. DYNAMIC WEIGHT ENGINE
+
+Os pesos dos modelos devem ser adaptativos.
+
+Exemplo:
+
+```text
+peso = função(
+    desempenho histórico,
+    desempenho recente,
+    estabilidade,
+    calibração,
+    regime,
+    robustez
+)
+```
+
+Um modelo que funcionou bem no passado, mas perdeu desempenho recentemente, deve perder peso.
+
+---
+
+# 43. MODEL SELECTION
+
+Não utilizar todos os modelos obrigatoriamente no ranking.
+
+Cada modelo precisa demonstrar valor.
+
+Classificação:
+
+```text
+SUPERIOR AO BASELINE
+NEUTRO
+INFERIOR AO BASELINE
+INCONCLUSIVO
+```
+
+Modelos inferiores não devem aumentar artificialmente o score final.
+
+---
+
+# 44. SUPERVISOR / META-MODELO
+
+Criar um mecanismo de consenso.
+
+Cada modelo fornece:
+
+```text
+score
+```
+
+O Supervisor avalia:
+
+* concordância;
+* divergência;
+* desempenho;
+* recência;
+* estabilidade;
+* regime.
+
+Gerar:
+
+```text
+consensus_score
+```
+
+---
+
+# 45. EVIDENCE ENGINE
+
+Todo score deve ser decomponível.
+
+Exemplo:
+
+```text
+Score Final: 82.4
+
+Frequência recente: +12
+EWMA: +9
+Bayes: +11
+Markov: +5
+Regime: +8
+Estabilidade: +7
+
+Instabilidade: -4
+Baixa evidência: -2
+```
+
+Os valores acima são apenas exemplos.
+
+O sistema deve calcular valores reais.
+
+Nunca inventar explicações.
+
+---
+
+# 46. EXPLAINABLE AI
+
+Toda classificação deve responder:
+
+1. Por que essa milhar apareceu?
+2. Quais modelos apoiaram?
+3. Quais modelos discordaram?
+4. Quais evidências positivas existem?
+5. Quais evidências negativas existem?
+6. Como ela se comporta recentemente?
+7. Como se comporta historicamente?
+8. Qual o nível de estabilidade?
+9. O modelo supera o baseline?
+10. Quais são as limitações?
+
+---
+
+# 47. RANKING
+
+Gerar ranking das 10.000 milhares:
+
+```text
+0000
+0001
+...
+9999
+```
+
+Cada registro deve possuir:
+
+```text
+number
+rank
+score
+estimated_probability
+confidence
+```
+
+E evidências derivadas dos módulos.
+
+---
+
+# 48. TOP N CONFIGURÁVEL
+
+Permitir:
+
+```text
+Top 1
+Top 5
+Top 10
+Top 20
+Top 50
+Top 100
+Top 500
+```
+
+O sistema deve permitir comparar o desempenho de diferentes tamanhos de carteira/ranking.
+
+---
+
+# 49. BACKTESTING — WALK FORWARD
+
+Implementar backtesting temporal verdadeiro.
+
+Processo:
+
+```text
+dados até T
+↓
+treina
+↓
+gera ranking para T+1
+↓
+aguarda resultado real
+↓
+avalia
+↓
+adiciona T+1 ao histórico
+↓
+treina novamente
+↓
+gera ranking para T+2
+↓
+...
+```
+
+Nunca utilizar o futuro no treinamento.
+
+---
+
+# 50. BACKTEST COM TRÊS SESSÕES
+
+O backtesting deve respeitar a ordem:
+
+```text
+MANHA
+TARDE
+NOITE
+```
+
+Exemplo:
+
+Se o cutoff for:
+
+```text
+13/07/2026 TARDE
+```
+
+a previsão pode utilizar dados até esse evento.
+
+Não pode utilizar:
+
+```text
+13/07/2026 NOITE
+```
+
+nem qualquer evento posterior.
+
+---
+
+# 51. CUTOFF
+
+Toda previsão deve possuir:
+
+```text
+cutoff_datetime
+target_event_datetime
+```
+
+Obrigação:
+
+```text
+target_event_datetime > cutoff_datetime
+```
+
+---
+
+# 52. LEAKAGE
+
+Criar proteção em múltiplas camadas.
+
+### Banco
+
+Constraint.
+
+### Serviço de dados
+
+Filtro temporal obrigatório.
+
+### Backtest
+
+Validação temporal.
+
+### Testes
+
+Testes propositalmente contaminados.
+
+---
+
+# 53. TESTE DE LEAKAGE
+
+Criar teste:
+
+```text
+cutoff = 13/07/2026 TARDE
+```
+
+Tentar utilizar:
+
+```text
+13/07/2026 NOITE
+```
+
+O sistema deve rejeitar.
+
+O teste deve falhar caso dados futuros sejam utilizados.
+
+---
+
+# 54. MÉTRICAS DE BACKTEST
+
+Calcular no mínimo:
+
+```text
+n_predictions
+hits
+hit_rate
+top_1
+top_5
+top_10
+top_20
+top_50
+top_100
+```
+
+Quando houver probabilidades calibradas:
+
+```text
+Brier Score
+Log Loss
+Calibration
+```
+
+Também:
+
+```text
+baseline comparison
+```
+
+---
+
+# 55. SIGNIFICÂNCIA
+
+Quando apropriado utilizar:
+
+* testes estatísticos;
+* intervalos de confiança;
+* bootstrap;
+* Monte Carlo;
+* testes fora da amostra.
+
+Não considerar um resultado significativo apenas porque uma métrica ficou numericamente maior.
+
+---
+
+# 56. MÚLTIPLOS TESTES
+
+O sistema deve reconhecer o problema de testar milhares de padrões até encontrar um "padrão vencedor".
+
+Quando houver grande quantidade de hipóteses:
+
+considerar métodos apropriados de controle de múltiplos testes.
+
+---
+
+# 57. OVERFITTING
+
+O sistema deve possuir proteção contra overfitting.
+
+Nunca considerar um padrão válido somente porque funcionou:
+
+```text
+no histórico usado para descobrir o padrão.
+```
+
+Exigir:
+
+```text
+out-of-sample
+```
+
+e, quando possível:
+
+```text
+walk-forward
+```
+
+---
+
+# 58. VALIDAÇÃO DE ESTABILIDADE
+
+Uma estratégia não deve ser considerada robusta se funcionar somente em um período.
+
+Avaliar:
+
+```text
+período 1
+período 2
+período 3
+...
+```
+
+e medir estabilidade.
+
+---
+
+# 59. PREDICTION RUN
+
+Cada execução de previsão deve registrar:
+
+```text
+id
+model_id
+backtest_run_id
+target_draw_id
+target_event_datetime
+target_session
+cutoff_datetime
+last_data_datetime
+model_name
+model_version
+parameters
+features
+random_seed
+dataset_hash
+model_hash
+training_start
+training_end
+status
+created_at
+```
+
+---
+
+# 60. PREVISÕES CONGELADAS
+
+Quando uma previsão for gerada, ela deve ser congelada.
+
+Registrar:
+
+```text
+ranking
+number
+score
+estimated_probability
+```
+
+Não alterar posteriormente.
+
+Novos resultados gerarão uma nova previsão.
+
+---
+
+# 61. RECONCILIAÇÃO
+
+Após o sorteio real:
+
+comparar:
+
+```text
+previsão congelada
+×
+resultado real
+```
+
+Registrar:
+
+```text
+actual_hit
+actual_position
+total_hits
+top_1_hit
+```
+
+Sem modificar a previsão original.
+
+---
+
+# 62. AUDITORIA
+
+Registrar:
+
+* importações;
+* erros;
+* modelos;
+* backtests;
+* previsões;
+* alterações;
+* leakage;
+* reconciliações;
+* versões.
+
+---
+
+# 63. RESEARCH LAB
+
+Criar estrutura para hipóteses.
+
+Campos:
+
+```text
+nome
+descrição
+hipótese
+dados
+período
+modelo
+resultado
+p_value
+effect_size
+backtest
+status
+```
+
+Status:
+
+```text
+PENDENTE
+TESTANDO
+VALIDADA
+REJEITADA
+INCONCLUSIVA
+```
+
+---
+
+# 64. QUALIDADE DOS DADOS
+
+Antes de executar qualquer modelo:
+
+verificar:
+
+* quantidade;
+* datas;
+* sessões;
+* posições;
+* duplicidades;
+* números inválidos;
+* lacunas;
+* inconsistências;
+* cobertura temporal.
+
+Se houver problema, apresentar relatório.
+
+---
+
+# 65. DASHBOARD/API DE ESTADO
+
+A API deverá conseguir responder:
+
+```text
+quantos sorteios existem
+```
+
+```text
+qual é o último sorteio
+```
+
+```text
+qual foi a última data
+```
+
+```text
+qual a última sessão
+```
+
+```text
+quantos resultados existem
+```
+
+```text
+qual a qualidade do histórico
+```
+
+```text
+qual o regime atual
+```
+
+```text
+qual modelo está performando melhor
+```
+
+```text
+qual o ranking atual
+```
+
+---
+
+# 66. ENDPOINTS MÍNIMOS
+
+Implementar:
+
+```text
+GET /health
+
+POST /api/import/excel
+POST /api/import/csv
+POST /api/import/text
+
+GET /api/imports
+GET /api/imports/{id}
+
+GET /api/draws
+GET /api/draws/latest
+
+GET /api/statistics
+GET /api/statistics/recent
+
+GET /api/models
+GET /api/models/{id}
+
+POST /api/backtests
+GET /api/backtests
+GET /api/backtests/{id}
+
+POST /api/predictions
+GET /api/predictions
+GET /api/predictions/{id}
+
+GET /api/ranking
+
+GET /api/audit
+```
+
+---
+
+# 67. FRONTEND
+
+Este projeto é prioritariamente BACKEND.
+
+Não criar um frontend gigantesco sem necessidade.
+
+A prioridade é:
+
+```text
+API
+BANCO
+IMPORTAÇÃO
+ANÁLISE
+BACKTEST
+MODELOS
+RANKING
+AUDITORIA
+```
+
+Se o projeto já tiver frontend:
+
+preservar e integrar.
+
+Se não tiver:
+
+não criar complexidade desnecessária.
+
+Porém, a API deve estar pronta para receber futuramente uma interface contendo:
+
+* botão de upload Excel;
+* área de colar texto;
+* histórico;
+* análises;
+* ranking;
+* backtesting;
+* previsões.
+
+---
+
+# 68. BOTÃO DE EXCEL
+
+Quando existir interface no projeto, o botão:
+
+```text
+Selecionar arquivo Excel
+```
+
+deve funcionar de ponta a ponta:
+
+```text
+selecionar
+↓
+upload
+↓
+API
+↓
+parser
+↓
+validação
+↓
+PostgreSQL
+↓
+resposta
+```
+
+Não criar um botão visual sem implementar o backend correspondente.
+
+---
+
+# 69. GITHUB
+
+Organizar projeto de forma profissional.
+
+Exemplo:
+
+```text
+app/
+    api/
+    core/
+    database/
+    models/
+    schemas/
+    services/
+    analytics/
+    backtesting/
+    ml/
+    statistics/
+    importers/
+    audit/
+
+tests/
+
+migrations/
+
+scripts/
+
+requirements.txt
+
+.env.example
+
+README.md
+
+Dockerfile
+```
+
+A estrutura pode ser adaptada à stack existente.
+
+---
+
+# 70. POSTGRESQL
+
+Utilizar migrations.
+
+Se SQLAlchemy estiver sendo utilizado:
+
+```text
+Alembic
+```
+
+Não apagar banco para atualizar schema.
+
+Não recriar dados automaticamente em cada deploy.
+
+---
+
+# 71. SEGURANÇA
+
+Não colocar no código:
+
+* senha;
+* token;
+* DATABASE_URL real;
+* credenciais.
+
+Utilizar environment variables.
+
+---
+
+# 72. RENDER
+
+Preparar:
+
+```text
+health check
+```
+
+Configuração de:
+
+```text
+DATABASE_URL
+```
+
+e demais variáveis via ambiente.
+
+Fornecer configuração necessária para deploy.
+
+---
+
+# 73. TESTES
+
+Criar testes automatizados para:
+
+### Parser
+
+```text
+957 → 0957
+931 → 0931
+433 → 0433
+```
+
+### Importação
+
+Excel.
+
+CSV.
+
+Texto.
+
+### Sessões
+
+MANHA.
+
+TARDE.
+
+NOITE.
+
+### Duplicidade
+
+### Cutoff
+
+### Leakage
+
+### Walk-forward
+
+### Estatística
+
+### Ranking
+
+### Modelo
+
+### Previsão congelada
+
+### Reconciliação
+
+### Banco
+
+---
+
+# 74. TESTE DE INTEGRIDADE TEMPORAL
+
+Criar testes para garantir:
+
+```text
+MANHA < TARDE < NOITE
+```
+
+quando a fonte não possuir horário oficial e o sistema utilizar ordenação lógica.
+
+---
+
+# 75. MIGRAÇÃO
+
+Se já existirem dados no projeto antigo:
+
+não apagar.
+
+Criar mecanismo de migração.
+
+Processo:
+
+```text
+schema novo
+↓
+extração
+↓
+normalização
+↓
+transformação
+↓
+carga
+↓
+validação
+↓
+commit
+```
+
+Se houver divergência:
+
+```text
+ROLLBACK
+```
+
+---
+
+# 76. VALIDAÇÃO DA MIGRAÇÃO
+
+Não validar somente quantidade.
+
+Comparar:
+
+* quantidade;
+* datas;
+* sessões;
+* posições;
+* números;
+* duplicidades.
+
+Quando apropriado utilizar hashes/checksums.
+
+---
+
+# 77. APPEND ONLY / PROTEÇÃO
+
+Histórico não deve ser apagado acidentalmente.
+
+Correções devem ser auditáveis.
+
+Previsões congeladas não podem ser alteradas retroativamente.
+
+---
+
+# 78. MODELO DE DADOS FINAL
+
+A arquitetura deve permanecer conceitualmente:
+
+```text
+                    POSTGRESQL
+                         |
+        +----------------+----------------+
+        |                |                |
+    HISTÓRICO        INTELIGÊNCIA      AUDITORIA
+        |                |                |
+     draws           models          audit_events
+        |
+  draw_results
+        |
+   import_jobs
+                         |
+                  backtest_runs
+                         |
+                  prediction_runs
+                         |
+              frozen_prediction_items
+                         |
+                prediction_results
+```
+
+---
+
+# 79. PRINCÍPIO MAIS IMPORTANTE DO RANKING
+
+O ranking NÃO deve simplesmente dizer:
+
+> "os números que mais saíram são os melhores."
+
+Ele deve combinar evidências.
+
+Exemplo conceitual:
+
+```text
+Recência
++
+Frequência
++
+EWMA
++
+Atraso
++
+Bayes
++
+Markov
++
+Autocorrelação
++
+Regime
++
+Change Point
++
+Machine Learning
++
+Monte Carlo
++
+Cluster
++
+Graph
++
+Consenso
+```
+
+Porém:
+
+**somente módulos validados devem receber peso relevante.**
+
+---
+
+# 80. PESOS ADAPTATIVOS
+
+O sistema deve aprender quais módulos apresentam maior utilidade.
+
+Exemplo:
+
+```text
+Modelo A
+backtest recente: excelente
+backtest histórico: bom
+estabilidade: alta
+→ peso maior
+```
+
+Modelo B:
+
+```text
+backtest recente: ruim
+backtest histórico: bom
+estabilidade: baixa
+→ peso reduzido
+```
+
+Modelo C:
+
+```text
+não supera baseline
+→ peso zero ou próximo de zero
+```
+
+---
+
+# 81. RECÊNCIA DOS MODELOS
+
+Além de analisar resultados recentes, analisar também:
+
+> quais modelos estão funcionando melhor recentemente?
+
+Assim o sistema possui dois níveis de recência:
+
+### Recência dos dados
+
+Quais resultados recentes estão ocorrendo?
+
+### Recência da performance
+
+Quais modelos estão funcionando melhor atualmente?
+
+---
+
+# 82. CONFIANÇA
+
+Não apresentar confiança arbitrária.
+
+A confiança deve considerar:
+
+* quantidade de dados;
+* estabilidade;
+* concordância;
+* desempenho fora da amostra;
+* calibração;
+* robustez;
+* regime.
+
+---
+
+# 83. SAÍDA FINAL
+
+A resposta do sistema deve possuir:
+
+```text
+ÚLTIMO SORTEIO UTILIZADO
+
+CUTOFF
+
+QUANTIDADE DE DADOS
+
+JANELA RECENTE
+
+JANELA MÉDIA
+
+HISTÓRICO TOTAL
+
+REGIME ATUAL
+
+MODELOS ATIVOS
+
+DESEMPENHO DOS MODELOS
+
+BASELINE
+
+RANKING
+
+EVIDÊNCIAS
+
+CONFIANÇA
+
+BACKTEST
+
+LIMITAÇÕES
+```
+
+---
+
+# 84. EXEMPLO DE RANKING
+
+Formato conceitual:
+
+```text
+#1 — 5201
+Score: 83.42
+Probabilidade estimada: X
+Confiança: X
+
+Principais evidências:
++ frequência recente
++ estabilidade
++ suporte Bayesiano
++ consenso de modelos
+
+Contra:
+- Markov neutro
+- baixa evidência de longo prazo
+```
+
+Os valores precisam ser calculados pelo sistema.
+
+Nunca inventar.
+
+---
+
+# 85. REGRA DE TRANSPARÊNCIA
+
+Se um modelo não foi executado:
+
+não fingir que foi.
+
+Se uma métrica não pôde ser calculada:
+
+informar.
+
+Se não houver dados suficientes:
+
+informar.
+
+Se o resultado for inconclusivo:
+
+informar.
+
+---
+
+# 86. REGRA CONTRA FALSA PRECISÃO
+
+Não produzir:
+
+```text
+99,87% de confiança
+```
+
+sem fundamentação estatística.
+
+Uma saída estatisticamente honesta é preferível a uma saída impressionante.
+
+---
+
+# 87. REGRA CONTRA "PADRÕES MÁGICOS"
+
+O sistema deve procurar padrões, mas também tentar destruí-los.
+
+Para cada padrão encontrado:
+
+```text
+descobrir
+↓
+testar
+↓
+tentar refutar
+↓
+backtest
+↓
+out-of-sample
+↓
+replicar
+```
+
+Se desaparecer fora da amostra:
+
+```text
+REJEITADO
+```
+
+---
+
+# 88. REPRODUTIBILIDADE
+
+Cada previsão deve registrar:
+
+```text
+model_version
+parameters
+random_seed
+dataset_hash
+model_hash
+cutoff
+features
+```
+
+Assim deve ser possível reproduzir a análise original.
+
+---
+
+# 89. NOVOS RESULTADOS
+
+Quando novos resultados forem importados:
+
+```text
+IMPORTAR
+↓
+VALIDAR
+↓
+DEDUPLICAR
+↓
+GRAVAR
+↓
+ATUALIZAR ESTATÍSTICAS
+↓
+ATUALIZAR REGIME
+↓
+ATUALIZAR PERFORMANCE DOS MODELOS
+↓
+RECALCULAR PESOS
+↓
+GERAR NOVO RANKING
+```
+
+O sistema deve utilizar os novos dados na tomada de decisão.
+
+---
+
+# 90. NÃO REESCREVER O PASSADO
+
+Uma previsão antiga não deve ser recalculada usando resultados que não existiam no momento da previsão.
+
+Isso é essencial.
+
+Exemplo:
+
+```text
+Previsão criada às 14:00
+```
+
+Não pode posteriormente incorporar:
+
+```text
+resultado das 19:00
+```
+
+naquela previsão original.
+
+---
+
+# 91. SEPARAÇÃO ENTRE PREVISÃO E AVALIAÇÃO
+
+A previsão é congelada.
+
+A avaliação acontece depois.
+
+Fluxo:
+
+```text
+PREVISÃO
+↓
+CONGELAMENTO
+↓
+RESULTADO REAL
+↓
+RECONCILIAÇÃO
+↓
+MÉTRICA
+```
+
+---
+
+# 92. PERFORMANCE CONTÍNUA
+
+Criar histórico de performance de cada modelo.
+
+Exemplo:
+
+```text
+Modelo
+Período
+Top 1
+Top 10
+Top 50
+Brier
+Log Loss
+Baseline
+Status
+```
+
+---
+
+# 93. PESQUISA CONTÍNUA
+
+O sistema deve permitir que novas hipóteses sejam adicionadas sem destruir a arquitetura.
+
+A arquitetura deve ser modular.
+
+---
+
+# 94. NÃO SUPERDIMENSIONAR O SISTEMA
+
+Não criar microsserviços desnecessários.
+
+Inicialmente preferir:
+
+```text
+monólito modular
+```
+
+com separação clara de responsabilidades.
+
+Só separar serviços quando houver necessidade real.
+
+---
+
+# 95. TECNOLOGIA PREFERENCIAL
+
+Se não houver stack existente que determine outra escolha:
+
+```text
+Python
+FastAPI
+SQLAlchemy
+Alembic
+PostgreSQL
+Pandas
+NumPy
+SciPy
+scikit-learn
+```
+
+Adicionar outras bibliotecas apenas quando justificadas.
+
+---
+
+# 96. ESTRUTURA RECOMENDADA
+
+Exemplo:
+
+```text
+app/
+├── main.py
+├── api/
+│   ├── imports.py
+│   ├── draws.py
+│   ├── statistics.py
+│   ├── models.py
+│   ├── backtests.py
+│   ├── predictions.py
+│   └── ranking.py
+│
+├── core/
+│   ├── config.py
+│   └── security.py
+│
+├── database/
+│   ├── connection.py
+│   └── session.py
+│
+├── models/
+│   ├── draw.py
+│   ├── result.py
+│   ├── prediction.py
+│   └── backtest.py
+│
+├── importers/
+│   ├── excel.py
+│   ├── csv.py
+│   └── text.py
+│
+├── statistics/
+│   ├── frequency.py
+│   ├── recency.py
+│   ├── delay.py
+│   ├── bayesian.py
+│   ├── markov.py
+│   ├── autocorrelation.py
+│   ├── entropy.py
+│   ├── change_point.py
+│   └── regime.py
+│
+├── ml/
+│   ├── baseline.py
+│   ├── classical.py
+│   ├── ensemble.py
+│   ├── clustering.py
+│   ├── graph.py
+│   └── meta_learning.py
+│
+├── backtesting/
+│   ├── walk_forward.py
+│   ├── metrics.py
+│   ├── leakage.py
+│   ├── monte_carlo.py
+│   └── bootstrap.py
+│
+├── ranking/
+│   ├── scoring.py
+│   ├── consensus.py
+│   └── explanation.py
+│
+└── audit/
+    └── service.py
+```
+
+Adapte à estrutura real do projeto.
+
+---
+
+# 97. DOCUMENTAÇÃO
+
+Criar/atualizar:
+
+```text
+README.md
+```
+
+Explicar:
+
+* instalação;
+* ambiente;
+* banco;
+* migrations;
+* importação;
+* API;
+* testes;
+* backtesting;
+* deploy Render.
+
+---
+
+# 98. EXECUÇÃO LOCAL
+
+Fornecer comandos funcionais para:
+
+```text
+instalação
+migration
+execução
+testes
+```
+
+---
+
+# 99. HEALTH CHECK
+
+Implementar:
+
+```text
+GET /health
+```
+
+Retornar status da aplicação e, quando apropriado, do banco.
+
+---
+
+# 100. CRITÉRIO FINAL DE ACEITAÇÃO
+
+O projeto somente será considerado concluído quando:
+
+### BANCO
+
+* [ ] PostgreSQL funcionando
+* [ ] migrations funcionando
+* [ ] histórico único
+* [ ] três sessões
+* [ ] integridade
+
+### IMPORTAÇÃO
+
+* [ ] Excel funcionando
+* [ ] CSV funcionando
+* [ ] texto funcionando
+* [ ] zeros à esquerda
+* [ ] deduplicação
+* [ ] validação
+
+### ANÁLISE
+
+* [ ] frequência
+* [ ] recência
+* [ ] EWMA
+* [ ] atraso
+* [ ] Bayes
+* [ ] Markov
+* [ ] autocorrelação
+* [ ] entropia
+* [ ] change point
+* [ ] regime
+* [ ] cluster
+* [ ] graph
+* [ ] pattern discovery
+* [ ] Monte Carlo
+* [ ] bootstrap
+* [ ] ML
+* [ ] meta-learning
+
+### BACKTEST
+
+* [ ] walk-forward
+* [ ] baseline
+* [ ] out-of-sample
+* [ ] leakage protection
+* [ ] métricas
+* [ ] estabilidade
+
+### PREVISÃO
+
+* [ ] ranking
+* [ ] score
+* [ ] probabilidade estimada
+* [ ] confiança
+* [ ] explicabilidade
+* [ ] congelamento
+* [ ] reconciliação
+
+### INFRAESTRUTURA
+
+* [ ] GitHub
+* [ ] Render
+* [ ] PostgreSQL
+* [ ] environment variables
+* [ ] health check
+* [ ] testes automatizados
+
+---
+
+# 101. REGRA FINAL DE COMPORTAMENTO DA IA
+
+Você NÃO deve ficar respondendo:
+
+> "Quer que eu faça a próxima etapa?"
+
+Você NÃO deve ficar perguntando:
+
+> "Deseja que eu crie o arquivo X?"
+
+Você NÃO deve entregar:
+
+> "Aqui está um exemplo do código."
+
+Você deve implementar.
+
+Se houver dez arquivos necessários, crie os dez.
+
+Se houver vinte arquivos necessários, crie os vinte.
+
+Se houver uma dependência necessária, adicione-a.
+
+Se houver erro durante os testes, corrija-o.
+
+Se uma abordagem estiver tecnicamente errada, substitua-a por uma abordagem correta.
+
+---
+
+# 102. ORDEM DE EXECUÇÃO OBRIGATÓRIA
+
+Comece imediatamente:
+
+```text
+1. INSPECIONAR REPOSITÓRIO
+        ↓
+2. IDENTIFICAR STACK
+        ↓
+3. IDENTIFICAR FUNCIONALIDADES EXISTENTES
+        ↓
+4. IMPLEMENTAR BANCO/MIGRATIONS
+        ↓
+5. IMPLEMENTAR IMPORTADORES
+        ↓
+6. IMPLEMENTAR API
+        ↓
+7. IMPLEMENTAR ESTATÍSTICA
+        ↓
+8. IMPLEMENTAR MODELOS
+        ↓
+9. IMPLEMENTAR BACKTEST
+        ↓
+10. IMPLEMENTAR CONSENSO
+        ↓
+11. IMPLEMENTAR RANKING
+        ↓
+12. IMPLEMENTAR PREVISÕES CONGELADAS
+        ↓
+13. IMPLEMENTAR AUDITORIA
+        ↓
+14. IMPLEMENTAR TESTES
+        ↓
+15. EXECUTAR TESTES
+        ↓
+16. CORRIGIR ERROS
+        ↓
+17. EXECUTAR NOVAMENTE
+        ↓
+18. VALIDAR DEPLOY
+        ↓
+19. ATUALIZAR README
+```
+
+---
+
+# 103. RESULTADO ESPERADO
+
+Ao terminar, quero um projeto que seja efetivamente capaz de:
+
+```text
+RECEBER HISTÓRICO
+        ↓
+VALIDAR
+        ↓
+ARMAZENAR
+        ↓
+ANALISAR
+        ↓
+PRIORIZAR DADOS RECENTES
+        ↓
+EXECUTAR MODELOS
+        ↓
+COMPARAR MODELOS
+        ↓
+EXECUTAR BACKTEST
+        ↓
+ELIMINAR MODELOS SEM EVIDÊNCIA
+        ↓
+CALCULAR CONSENSO
+        ↓
+GERAR RANKING
+        ↓
+EXPLICAR RANKING
+        ↓
+CONGELAR PREVISÃO
+        ↓
+AGUARDAR RESULTADO
+        ↓
+AVALIAR
+        ↓
+APRENDER COM O DESEMPENHO
+        ↓
+ATUALIZAR PESOS
+        ↓
+GERAR NOVA ANÁLISE
+```
+
+---
+
+# 104. PRINCÍPIO CIENTÍFICO FINAL
+
+O sistema deve ser construído para tentar responder honestamente à seguinte pergunta:
+
+> "Existe alguma evidência estatística, temporal ou estrutural que permita classificar algumas milhares acima de outras, de forma que essa classificação sobreviva a um teste fora da amostra e supere consistentemente um baseline?"
+
+Se a resposta for:
+
+```text
+SIM
+```
+
+mostrar a evidência e sua força.
+
+Se for:
+
+```text
+NÃO
+```
+
+mostrar que o modelo não demonstrou vantagem.
+
+Se for:
+
+```text
+INCONCLUSIVO
+```
+
+mostrar a incerteza.
+
+Nunca fabricar uma resposta positiva.
+
+---
+
+# 105. MISSÃO
+
+Construa o LotoCE Quant Lab V4.0 como um **laboratório quantitativo verificável**, e não como um gerador de palpites.
+
+O sistema deve ser:
+
+```text
+MODULAR
+AUDITÁVEL
+REPRODUTÍVEL
+TESTÁVEL
+TEMPORALMENTE CORRETO
+PROTEGIDO CONTRA LEAKAGE
+ORIENTADO À RECÊNCIA
+COMPARÁVEL COM BASELINES
+VALIDADO POR BACKTEST
+EXPLICÁVEL
+```
+
+E, principalmente:
+
+**ENTREGUE O CÓDIGO FUNCIONAL INTEGRADO.**
+
+**NÃO PARE PARA PEDIR AUTORIZAÇÃO ENTRE AS ETAPAS.**
+
+**NÃO ENTREGUE SOMENTE PARTES DO SISTEMA.**
+
+**IMPLEMENTE, TESTE, CORRIJA E FINALIZE.**
