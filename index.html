@@ -66,7 +66,7 @@
         <!-- VIEW: IMPORTAÇÃO E COLAGEM (EXCEL / TEXTO POR SESSÕES) -->
         <section id="view-import" class="view-section space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Colagem Inteligente baseada no Modelo da Imagem (Manhã, Tarde, Tarde II, Noite) -->
+                <!-- Colagem Inteligente de Resultados (Manhã, Tarde, Tarde II, Noite) -->
                 <div class="bg-dark-900 border border-dark-800 rounded-xl p-6 space-y-4">
                     <h2 class="text-md font-bold text-sky-400 flex items-center gap-2">📋 Colagem Direta de Resultados (Multi-Sessão)</h2>
                     <p class="text-xs text-slate-400 leading-relaxed">
@@ -85,11 +85,11 @@
                     </button>
                 </div>
 
-                <!-- Importação de Arquivo Excel / CSV com Botão de Processar -->
+                <!-- Importação de Arquivo Excel / CSV com Botão de Processar Direto do Input -->
                 <div class="bg-dark-900 border border-dark-800 rounded-xl p-6 space-y-4">
                     <h2 class="text-md font-bold text-emerald-400 flex items-center gap-2">📂 Importar Planilha (Excel / CSV)</h2>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Selecione um arquivo `.xlsx`, `.xls` ou `.csv` e clique em <strong>Processar Planilha</strong>.
+                        Selecione um arquivo `.xlsx`, `.xls` ou `.csv` e clique em <strong>Processar Planilha Selecionada</strong>.
                     </p>
                     <div class="border-2 border-dashed border-dark-700 hover:border-emerald-500/50 rounded-xl p-6 text-center space-y-3 cursor-pointer transition bg-dark-950/50" onclick="document.getElementById('excel-file-input').click()">
                         <span class="text-3xl">📊</span>
@@ -366,22 +366,18 @@
 
         // --- DATA PARSER (EXCEL & TEXT PASTE CORRIGIDO) ---
         class DataParser {
-            constructor() {
-                this.pendingFileBuffer = null;
-            }
-
             handleFileSelect(event) {
                 const file = event.target.files[0];
                 if (!file) return;
-                this.pendingFileBuffer = file;
                 document.getElementById('selected-file-name').textContent = `Arquivo selecionado: ${file.name}`;
                 document.getElementById('import-feedback').textContent = `Pronto para processar ${file.name}. Clique em Processar Planilha.`;
             }
 
             async processExcelFile() {
-                const file = this.pendingFileBuffer;
+                const fileInput = document.getElementById('excel-file-input');
+                const file = fileInput.files[0];
                 if (!file) {
-                    alert('Nenhum arquivo Excel ou CSV selecionado.');
+                    alert('Nenhum arquivo Excel ou CSV selecionado. Clique na área tracejada para selecionar.');
                     return;
                 }
 
@@ -432,7 +428,6 @@
                     return;
                 }
 
-                // Parser robusto para blocos "Extração Noite", "Extração Tarde II", "Extração Tarde", "Extração Manhã"
                 const blocks = text.split(/Extração\s+/i).filter(b => b.trim().length > 0);
                 let count = 0;
 
@@ -450,7 +445,6 @@
                     for (let i = 1; i < lines.length; i++) {
                         let line = lines[i];
                         if (line.includes('º') || line.toLowerCase().includes('prêmio') || line.includes('/202') || line.toLowerCase().includes('dia')) continue;
-                        // Limpar caracteres não numéricos se houver
                         let cleanNum = line.replace(/\D/g, '');
                         if (cleanNum.length >= 1 && cleanNum.length <= 4) {
                             results.push({ position: currentPos++, number: cleanNum });
@@ -465,7 +459,6 @@
                 }
 
                 if (count === 0) {
-                    // Fallback se não encontrar o marcador "Extração" explícito, mas tiver números
                     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     const results = [];
                     let currentPos = 1;
