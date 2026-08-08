@@ -1,110 +1,1963 @@
-/**
- * LotoCE Quant Intelligence Engine v4.2 - Módulo de Arquitetura Temporal e Integridade
- * Respeita estritamente o princípio: "O que eu saberia naquele exato momento?"
- */
+# ESPECIFICAÇÃO MESTRE DO SISTEMA
 
-class TemporalEngine {
-    constructor(database) {
-        this.db = database; // Banco único contendo todos os sorteios (MANHA, TARDE, NOITE)
-    }
+# LOTOCE QUANT LAB — VERSÃO COMPLETA
 
-    /**
-     * 2. ORDEM CRONOLÓGICA REAL
-     * Cria e ordena os registros considerando data, hora e sessão.
-     */
-    buildChronologicalTimeline(records) {
-        return records.map(record => ({
-            ...record,
-            event_datetime: this._parseEventDatetime(record)
-        })).sort((a, b) => a.event_datetime - b.event_datetime);
-    }
+## 0. INSTRUÇÃO PRINCIPAL À IA DE DESENVOLVIMENTO
 
-    _parseEventDatetime(record) {
-        // Se a fonte fornecer data, hora e sessão, mapeia o momento exato
-        return new Date(`${record.data}T${record.hora || this._getDefaultHour(record.sessao)}`);
-    }
+Você está desenvolvendo um sistema completo de análise quantitativa e backtesting histórico para resultados da LotoCE.
 
-    _getDefaultHour(sessao) {
-        const hours = { 'MANHA': '09:00:00', 'TARDE': '14:00:00', 'NOITE': '19:00:00' };
-        return hours[sessao?.toUpperCase()] || '12:00:00';
-    }
+IMPORTANTE:
 
-    /**
-     * 4 & 5. REGRA DE OURO E DATA CUTOFF
-     * Retorna apenas os dados permitidos até o momento exato do cutoff.
-     */
-    getDatasetUpToCutoff(cutoffDatetime) {
-        const timeline = this.buildChronologicalTimeline(this.db.getAllRecords());
-        const cutoffTime = new Date(cutoffDatetime).getTime();
+Esta especificação substitui e consolida todas as instruções anteriores.
 
-        return timeline.filter(d => new Date(d.event_datetime).getTime() <= cutoffTime);
-    }
+Não implemente apenas uma parte dela.
 
-    /**
-     * 20 & 21. DETECTOR AUTOMÁTICO DE LEAKAGE
-     * Verifica se há contaminação por dados futuros no conjunto de dados de treino/teste.
-     */
-    detectDataLeakage(dataset, cutoffDatetime) {
-        const cutoffTime = new Date(cutoffDatetime).getTime();
-        const violations = dataset.filter(d => new Date(d.event_datetime).getTime() > cutoffTime);
+Antes de alterar o código existente:
 
-        if (violations.length > 0) {
-            return {
-                status: "LEAKAGE DETECTADO",
-                valid: false,
-                violationsCount: violations.length,
-                message: "Atenção: Dados futuros encontrados no conjunto de análise."
-            };
-        }
+1. inspecione a arquitetura atual;
+2. identifique frontend;
+3. identifique backend;
+4. identifique banco de dados;
+5. identifique modelos existentes;
+6. identifique estrutura atual de importação;
+7. identifique problemas e funcionalidades já implementadas;
+8. preserve o que estiver funcionando;
+9. corrija conflitos de arquitetura;
+10. não remova funcionalidades sem necessidade.
 
-        return {
-            status: "✓ ÍNTEGRO",
-            valid: true,
-            violationsCount: 0,
-            message: "Nenhum vazamento de dados futuros detectado."
-        };
-    }
+O sistema deve ser construído como um laboratório quantitativo auditável.
 
-    /**
-     * 18. BANCO DE PREVISÕES CONGELADAS (Estrutura do Registro)
-     */
-    createFrozenPredictionRecord(targetEvent, cutoffEvent, modelMeta, rankings) {
-        return {
-            prediction_id: `pred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            created_at: new Date().toISOString(),
-            target_event_id: targetEvent.id,
-            target_datetime: targetEvent.event_datetime,
-            target_session: targetEvent.sessao,
-            cutoff_event_id: cutoffEvent.id,
-            cutoff_datetime: cutoffEvent.event_datetime,
-            model_version: modelMeta.version,
-            training_start: modelMeta.trainingStart,
-            training_end: modelMeta.trainingEnd,
-            top_1: rankings[0] || null,
-            top_5: rankings.slice(0, 5),
-            top_10: rankings.slice(0, 10),
-            top_20: rankings.slice(0, 20),
-            top_50: rankings.slice(0, 50),
-            top_100: rankings.slice(0, 100),
-            probabilities: modelMeta.probabilities || {},
-            features_version: modelMeta.featuresVersion,
-            prediction_hash: modelMeta.hash || null,
-            status: "CONGELADA"
-        };
-    }
+O objetivo não é afirmar que é possível prever resultados aleatórios.
 
-    /**
-     * 23. AUDITORIA TEMPORAL E STATUS DO MODELO ATUAL
-     */
-    getSystemAuditStatus(lastKnownEvent, nextEvent, cutoffEvent) {
-        return {
-            modeloAtual: "🟢 ATIVO",
-            ultimoResultadoConhecido: `${lastKnownEvent.data} — ${lastKnownEvent.sessao}`,
-            proximoEvento: `${nextEvent.data} — ${nextEvent.sessao}`,
-            cutoffUtilizado: `${cutoffEvent.data} — ${cutoffEvent.sessao}`,
-            dadosFuturosUtilizados: 0,
-            integridadeTemporal: "✓ Aprovada",
-            timestampAuditoria: new Date().toISOString()
-        };
-    }
-}
+O objetivo é:
+
+> testar rigorosamente se determinados padrões históricos possuem alguma capacidade preditiva fora da amostra e compará-los contra um baseline probabilístico e aleatório.
+
+Se não houver evidência de vantagem, o sistema deve informar isso claramente.
+
+---
+
+# 1. OBJETIVOS DO SISTEMA
+
+O sistema deve permitir:
+
+1. importar histórico completo;
+2. importar Excel;
+3. importar CSV;
+4. inserir resultados manualmente;
+5. separar manhã, tarde e noite;
+6. analisar milhares;
+7. analisar centenas;
+8. analisar dezenas;
+9. analisar unidades;
+10. analisar frequência;
+11. analisar atraso;
+12. analisar recorrência;
+13. analisar transições;
+14. analisar Markov;
+15. testar modelos estatísticos;
+16. testar modelos de machine learning;
+17. criar ensemble;
+18. gerar ranking de milhares;
+19. executar backtesting;
+20. executar walk-forward;
+21. comparar contra acaso;
+22. executar Monte Carlo;
+23. medir significância;
+24. medir estabilidade;
+25. detectar overfitting;
+26. detectar leakage;
+27. impedir look-ahead;
+28. produzir previsão atual;
+29. registrar previsões congeladas;
+30. auditar cada previsão;
+31. avaliar desempenho financeiro hipotético;
+32. mostrar claramente limitações.
+
+---
+
+# 2. CONCEITO FUNDAMENTAL
+
+O sistema possui dois ambientes conceituais:
+
+## A. HISTÓRICO
+
+Contém todos os resultados conhecidos.
+
+## B. ESTADO TEMPORAL
+
+Representa exatamente quais informações estavam disponíveis em determinado momento.
+
+O banco pode conter o histórico inteiro.
+
+Porém um modelo nunca poderá utilizar informações posteriores ao momento da previsão.
+
+Regra:
+
+```text
+DADO.event_datetime <= CUTOFF
+```
+
+Permitido.
+
+```text
+DADO.event_datetime > CUTOFF
+```
+
+PROIBIDO.
+
+Essa regra deve existir no código, nos modelos e nos testes.
+
+---
+
+# 3. BANCO DE DADOS
+
+Utilizar um único banco para todos os sorteios.
+
+Não criar banco separado para manhã, tarde e noite.
+
+Cada resultado deve conter:
+
+```text
+id
+data
+hora
+event_datetime
+sessao
+concurso
+posicao
+milhar
+centena
+dezena
+unidade
+fonte
+timestamp_importacao
+```
+
+Sessão:
+
+```text
+MANHA
+TARDE
+NOITE
+```
+
+---
+
+# 4. ORDEM CRONOLÓGICA
+
+A sequência dos eventos deve ser baseada prioritariamente em:
+
+```text
+event_datetime
+```
+
+Quando o horário não estiver disponível, utilizar uma ordenação determinística baseada em:
+
+```text
+data
+sessao
+concurso
+```
+
+Nunca confiar somente no ID do banco.
+
+---
+
+# 5. EXEMPLO DE HISTÓRICO
+
+Um único arquivo pode conter:
+
+```text
+Data        Sessão    Concurso    1º     2º     ... 10º
+01/08/2026  MANHA     10001       3827   1942   ...
+01/08/2026  TARDE     10002       7610   4421   ...
+01/08/2026  NOITE     10003       0184   9271   ...
+02/08/2026  MANHA     10004       5512   3098   ...
+```
+
+Isso é desejável.
+
+A sessão não deve ser perdida durante a importação.
+
+---
+
+# 6. IMPORTAÇÃO DE EXCEL E CSV
+
+Criar uma página:
+
+# IMPORTAR DADOS
+
+Funcionalidades:
+
+* arrastar arquivo;
+* selecionar arquivo;
+* Excel XLSX;
+* CSV;
+* pré-visualização;
+* mapeamento de colunas;
+* validação;
+* confirmação;
+* importação incremental.
+
+Fluxo:
+
+```text
+UPLOAD
+↓
+LEITURA
+↓
+DETECÇÃO DE COLUNAS
+↓
+MAPEAMENTO
+↓
+PRÉ-VISUALIZAÇÃO
+↓
+VALIDAÇÃO
+↓
+RELATÓRIO
+↓
+CONFIRMAÇÃO
+↓
+IMPORTAÇÃO
+↓
+ATUALIZAÇÃO DO BANCO
+```
+
+---
+
+# 7. VALIDAÇÃO DOS DADOS
+
+Detectar:
+
+* milhar inválida;
+* número com menos de quatro dígitos;
+* número com mais de quatro dígitos;
+* data inválida;
+* sessão inválida;
+* concurso duplicado;
+* resultado duplicado;
+* coluna ausente;
+* concurso faltante;
+* conflito de horário;
+* registros incompletos.
+
+Milhar deve preservar zeros à esquerda.
+
+Exemplo:
+
+```text
+0007
+0042
+0184
+1000
+9999
+```
+
+Nunca converter `0007` para `7`.
+
+---
+
+# 8. IMPORTAÇÃO DUPLICADA
+
+Se o mesmo resultado for importado duas vezes:
+
+não duplicar.
+
+O sistema deve identificar uma chave lógica, por exemplo:
+
+```text
+data
++
+sessao
++
+concurso
++
+posicao
+```
+
+e impedir duplicação.
+
+---
+
+# 9. INSERÇÃO MANUAL
+
+Criar:
+
+# INSERIR RESULTADO
+
+Campos:
+
+```text
+Data
+Hora
+Sessão
+Concurso
+1º prêmio
+2º prêmio
+3º prêmio
+...
+10º prêmio
+```
+
+Antes de salvar:
+
+* validar;
+* verificar duplicidade;
+* confirmar.
+
+---
+
+# 10. DASHBOARD
+
+Tela inicial simples.
+
+Mostrar:
+
+```text
+Concursos analisados
+Resultados analisados
+Período histórico
+Último evento confirmado
+Próximo evento esperado
+Dados válidos
+Dados inválidos
+```
+
+Botões:
+
+```text
+IMPORTAR DADOS
+INSERIR RESULTADO
+ANALISAR
+BACKTEST
+PREVISÃO ATUAL
+AUDITORIA
+```
+
+---
+
+# 11. FILTROS GLOBAIS
+
+Filtros:
+
+## Sessão
+
+```text
+TODAS
+MANHÃ
+TARDE
+NOITE
+```
+
+## Período
+
+```text
+TODO HISTÓRICO
+ÚLTIMOS 30
+ÚLTIMOS 100
+ÚLTIMOS 500
+ÚLTIMOS 1.000
+PERSONALIZADO
+```
+
+## Posições
+
+```text
+1º
+1º–5º
+1º–10º
+```
+
+---
+
+# 12. ANÁLISE DE MILHARES
+
+O objetivo principal do laboratório é analisar números de:
+
+```text
+0000 a 9999
+```
+
+Para cada milhar calcular, quando aplicável:
+
+* frequência;
+* frequência relativa;
+* frequência recente;
+* atraso;
+* atraso médio;
+* maior atraso;
+* recorrência;
+* intervalo entre ocorrências;
+* distribuição temporal;
+* distribuição por sessão;
+* distribuição por posição;
+* transições;
+* métricas Markov;
+* score estatístico;
+* score de modelos;
+* score ensemble.
+
+---
+
+# 13. ANÁLISE DE CENTENAS
+
+Para:
+
+```text
+000 a 999
+```
+
+calcular:
+
+* frequência;
+* atraso;
+* recorrência;
+* distribuição por sessão;
+* distribuição por posição;
+* padrões temporais.
+
+Não assumir que um padrão observado em centenas implica previsibilidade da milhar.
+
+---
+
+# 14. ANÁLISE DE DEZENAS E UNIDADES
+
+Separar:
+
+```text
+milhar
+centena
+dezena
+unidade
+```
+
+para investigar estruturas internas.
+
+---
+
+# 15. ANÁLISE POR POSIÇÃO
+
+Permitir:
+
+```text
+1º prêmio
+2º prêmio
+...
+10º prêmio
+```
+
+e:
+
+```text
+1º–10º
+```
+
+Nunca misturar posições sem permitir que o usuário saiba qual conjunto está sendo analisado.
+
+---
+
+# 16. ANÁLISE POR SESSÃO
+
+Executar separadamente:
+
+```text
+TODAS
+MANHÃ
+TARDE
+NOITE
+```
+
+Também permitir:
+
+```text
+MANHÃ → TARDE
+TARDE → NOITE
+NOITE → MANHÃ
+```
+
+Não presumir que sessões tenham comportamento diferente.
+
+Testar essa hipótese estatisticamente.
+
+---
+
+# 17. MARKOV
+
+Implementar modelos Markov em diferentes níveis:
+
+```text
+milhar → milhar
+último dígito → próximo último dígito
+dezena → próxima dezena
+centena → próxima centena
+sessão → sessão
+```
+
+Mas respeitar rigorosamente a ordem temporal.
+
+Exemplo:
+
+```text
+NOITE dia X
+↓
+MANHÃ dia X+1
+```
+
+é uma transição válida.
+
+Não criar transições artificiais.
+
+---
+
+# 18. MODELOS ESTATÍSTICOS
+
+Criar modelos independentes:
+
+1. frequência;
+2. frequência recente;
+3. atraso;
+4. recorrência;
+5. janela móvel;
+6. Markov;
+7. modelos de transição;
+8. modelos probabilísticos;
+9. ensemble.
+
+Cada modelo deve possuir:
+
+```text
+nome
+versão
+parâmetros
+data de criação
+dados utilizados
+janela utilizada
+```
+
+---
+
+# 19. MACHINE LEARNING
+
+Machine learning pode ser utilizado experimentalmente.
+
+Possíveis modelos:
+
+* regressão;
+* árvores;
+* Random Forest;
+* Gradient Boosting;
+* XGBoost, se disponível;
+* modelos temporais;
+* outros modelos apropriados.
+
+Não utilizar ML somente porque é sofisticado.
+
+Um modelo simples que não apresenta vantagem deve ser preferido a um modelo complexo sem evidência.
+
+---
+
+# 20. ENSEMBLE
+
+Criar um ensemble combinando modelos.
+
+Exemplo:
+
+```text
+Frequency
++
+Delay
++
+Markov
++
+ML
+=
+ENSEMBLE
+```
+
+Os pesos devem ser determinados por validação.
+
+Não escolher pesos somente porque produziram o melhor resultado histórico.
+
+---
+
+# 21. RANKING DE MILHARES
+
+Produzir:
+
+```text
+TOP 1
+TOP 5
+TOP 10
+TOP 20
+TOP 50
+TOP 100
+```
+
+Cada milhar deve apresentar:
+
+```text
+Milhar
+Score
+Probabilidade estimada
+Baseline
+Lift
+Modelos favoráveis
+Modelos contrários
+Confiança
+Quantidade de evidências
+```
+
+---
+
+# 22. "POR QUE ESTA MILHAR?"
+
+Ao clicar em uma milhar:
+
+mostrar:
+
+```text
+4827
+
+Ranking: #1
+
+Frequência:
+...
+
+Atraso:
+...
+
+Markov:
+...
+
+Modelo ML:
+...
+
+Ensemble:
+...
+
+Backtest:
+...
+
+Baseline:
+...
+
+Lift:
+...
+
+Estabilidade:
+...
+
+Limitações:
+...
+```
+
+Não mostrar apenas um número de score.
+
+---
+
+# 23. PROBABILIDADE BASELINE
+
+O sistema deve calcular o baseline correspondente à mecânica real do jogo.
+
+Para uma milhar específica, caso existam 10 posições independentes/equivalentes entre 10.000 possibilidades, a referência aproximada de ocorrência em qualquer uma das 10 posições é:
+
+```text
+10 / 10.000
+=
+0,001
+=
+0,10%
+```
+
+ou aproximadamente:
+
+```text
+1 ocorrência a cada 1.000 concursos
+```
+
+Mas isso é uma expectativa teórica, não uma garantia.
+
+A fórmula final deve respeitar a mecânica real dos resultados.
+
+---
+
+# 24. BACKTEST
+
+Criar página:
+
+# BACKTESTING
+
+Opções:
+
+```text
+Modelo
+Sessão
+Período
+Posições
+Quantidade de milhares
+Janela histórica
+```
+
+---
+
+# 25. WALK-FORWARD
+
+O backtest deve funcionar assim:
+
+```text
+HISTÓRICO ATÉ T1
+↓
+TREINAR
+↓
+PREVER T2
+↓
+RESULTADO T2
+↓
+ADICIONAR T2 AO HISTÓRICO
+↓
+TREINAR/ATUALIZAR
+↓
+PREVER T3
+↓
+RESULTADO T3
+```
+
+Nunca:
+
+```text
+TREINAR COM TODO O HISTÓRICO
+↓
+TESTAR NO MESMO HISTÓRICO
+```
+
+Isso seria inadequado para medir capacidade preditiva temporal.
+
+---
+
+# 26. CUTOFF
+
+Cada previsão deve possuir:
+
+```text
+cutoff_event_id
+cutoff_datetime
+```
+
+Exemplo:
+
+```text
+Previsão:
+07/08/2026 NOITE
+
+Cutoff:
+07/08/2026 TARDE
+```
+
+Somente dados:
+
+```text
+<= cutoff
+```
+
+podem ser usados.
+
+---
+
+# 27. SNAPSHOT TEMPORAL
+
+Para cada previsão histórica criar um snapshot lógico.
+
+Esse snapshot representa:
+
+> exatamente o estado dos dados que existia naquele momento.
+
+A previsão deve ser reproduzível a partir desse snapshot.
+
+---
+
+# 28. PREVISÃO ATUAL
+
+Criar página:
+
+# 🎯 PREVISÃO ATUAL
+
+O sistema deve identificar automaticamente:
+
+```text
+último resultado confirmado
+```
+
+e:
+
+```text
+próximo evento
+```
+
+Exemplo:
+
+```text
+Último resultado:
+07/08 — TARDE
+
+Próximo:
+07/08 — NOITE
+```
+
+A previsão atual usa:
+
+```text
+todo o histórico confirmado
+até o último evento.
+```
+
+---
+
+# 29. EXEMPLO DE PREVISÃO ATUAL
+
+Se já ocorreram:
+
+```text
+07/08 MANHÃ
+07/08 TARDE
+```
+
+e ainda não ocorreu:
+
+```text
+07/08 NOITE
+```
+
+o modelo pode usar:
+
+```text
+todo histórico anterior
++
+07/08 MANHÃ
++
+07/08 TARDE
+```
+
+Não pode usar:
+
+```text
+07/08 NOITE
+```
+
+---
+
+# 30. ATUALIZAÇÃO APÓS NOVO RESULTADO
+
+Fluxo:
+
+```text
+NOVO RESULTADO
+↓
+VALIDAÇÃO
+↓
+CONFIRMAÇÃO
+↓
+BANCO
+↓
+RECALCULAR FEATURES
+↓
+ATUALIZAR MODELOS
+↓
+GERAR NOVA PREVISÃO
+```
+
+---
+
+# 31. AUDITORIA TEMPORAL
+
+Mostrar em cada previsão:
+
+```text
+Último dado utilizado
+Data/hora do cutoff
+Próximo evento
+Dados futuros utilizados
+Leakage detectado
+Versão do modelo
+Quantidade de dados
+```
+
+Exemplo:
+
+```text
+🟢 INTEGRIDADE TEMPORAL
+
+Último dado:
+07/08/2026 — TARDE
+
+Previsão:
+07/08/2026 — NOITE
+
+Dados futuros utilizados:
+0
+
+Leakage:
+0
+
+Status:
+VÁLIDO
+```
+
+---
+
+# 32. DETECTOR DE LEAKAGE
+
+Implementar testes automáticos para detectar:
+
+* resultado futuro;
+* feature futura;
+* normalização futura;
+* target como feature;
+* treinamento futuro;
+* seleção de modelo usando futuro;
+* tuning usando futuro;
+* alteração posterior da previsão.
+
+Se houver leakage:
+
+```text
+BACKTEST INVÁLIDO
+```
+
+---
+
+# 33. PREVISÕES CONGELADAS
+
+Criar tabela:
+
+```text
+predictions
+```
+
+Armazenar:
+
+```text
+prediction_id
+target_event
+cutoff
+model_version
+parameters
+features_version
+top_1
+top_5
+top_10
+top_20
+top_50
+probabilities
+timestamp
+random_seed
+hash
+```
+
+Não modificar previsões antigas.
+
+---
+
+# 34. BASELINE ALEATÓRIO
+
+Criar um modelo:
+
+# RANDOM BASELINE
+
+Para cada configuração:
+
+```text
+1 milhar
+5 milhares
+10 milhares
+20 milhares
+50 milhares
+100 milhares
+```
+
+executar simulações aleatórias.
+
+---
+
+# 35. MONTE CARLO
+
+Executar, por exemplo:
+
+```text
+10.000 simulações
+```
+
+quando computacionalmente possível.
+
+Calcular:
+
+* média;
+* mediana;
+* desvio;
+* percentil 5;
+* percentil 25;
+* percentil 50;
+* percentil 75;
+* percentil 95;
+* distribuição de acertos.
+
+---
+
+# 36. COMPARAÇÃO
+
+Mostrar:
+
+```text
+MODELO
+ACERTOS OBSERVADOS
+```
+
+versus:
+
+```text
+BASELINE
+ACERTOS ESPERADOS
+```
+
+e:
+
+```text
+RANDOM MONTE CARLO
+DISTRIBUIÇÃO ESPERADA
+```
+
+---
+
+# 37. MÉTRICAS
+
+Calcular:
+
+```text
+Acertos
+Taxa de acerto
+Acertos esperados
+Lift
+Precisão
+Recall, quando aplicável
+Intervalo de confiança
+p-value, quando apropriado
+tamanho do efeito
+```
+
+Não utilizar p-value isoladamente.
+
+---
+
+# 38. MÚLTIPLAS COMPARAÇÕES
+
+Registrar:
+
+```text
+número de modelos
+número de parâmetros
+número de períodos
+número de sessões
+número de milhares
+número total de hipóteses testadas
+```
+
+Aplicar correções apropriadas quando necessário.
+
+Evitar:
+
+> testar milhares de combinações e mostrar somente a vencedora.
+
+---
+
+# 39. OUT-OF-SAMPLE
+
+Dividir o histórico temporalmente.
+
+Exemplo:
+
+```text
+TREINO
+70%
+
+VALIDAÇÃO
+15%
+
+TESTE FINAL
+15%
+```
+
+A divisão deve respeitar o tempo.
+
+Nunca embaralhar séries temporais quando isso causar vazamento.
+
+---
+
+# 40. HOLDOUT FINAL
+
+Criar um período final que permanece intocado durante desenvolvimento/tuning.
+
+Somente executar uma avaliação final depois que os modelos forem definidos.
+
+---
+
+# 41. TESTE DE ROBUSTEZ
+
+Executar em:
+
+```text
+histórico completo
+últimos 1.000
+últimos 500
+últimos 100
+diferentes sessões
+diferentes períodos
+```
+
+Um modelo que só funciona em uma janela deve ser marcado:
+
+```text
+FRÁGIL
+```
+
+---
+
+# 42. PERFORMANCE POR SESSÃO
+
+Comparar:
+
+```text
+TODAS
+MANHÃ
+TARDE
+NOITE
+```
+
+Pergunta:
+
+> Separar as sessões realmente melhora a previsão?
+
+Se não melhorar:
+
+```text
+nenhuma vantagem comprovada por sessão.
+```
+
+---
+
+# 43. PERFORMANCE POR POSIÇÃO
+
+Comparar:
+
+```text
+1º
+1º–5º
+1º–10º
+```
+
+Isso permite saber se uma suposta vantagem depende da posição considerada.
+
+---
+
+# 44. CURVA DE ACERTOS
+
+Criar gráficos:
+
+1. acertos acumulados;
+2. taxa móvel;
+3. lift acumulado;
+4. modelo vs aleatório;
+5. Monte Carlo;
+6. desempenho por sessão;
+7. desempenho por período;
+8. distribuição dos intervalos entre acertos.
+
+---
+
+# 45. BACKTEST ECONÔMICO
+
+Permitir informar:
+
+```text
+valor da aposta
+quantidade de apostas
+premiação
+custo
+```
+
+Calcular:
+
+```text
+investimento
+retorno
+lucro/prejuízo
+ROI
+drawdown
+sequência de perdas
+valor esperado
+```
+
+Separar:
+
+## PERFORMANCE ESTATÍSTICA
+
+de:
+
+## PERFORMANCE FINANCEIRA
+
+---
+
+# 46. MODEL GRAVEYARD
+
+Criar:
+
+# MODELOS REJEITADOS
+
+Mostrar modelos que falharam.
+
+Exemplo:
+
+```text
+Markov v1
+Motivo:
+não superou baseline.
+
+Frequency v2
+Motivo:
+overfitting.
+
+ML v3
+Motivo:
+boa performance no treino,
+ruim no teste.
+```
+
+Isso impede cherry-picking.
+
+---
+
+# 47. SISTEMA DE ALERTAS
+
+Criar alertas:
+
+```text
+⚠ Dados insuficientes
+⚠ Leakage detectado
+⚠ Backtest inválido
+⚠ Modelo instável
+⚠ Overfitting
+⚠ Amostra pequena
+⚠ Resultado não significativo
+⚠ Mudança estrutural detectada
+```
+
+---
+
+# 48. CLASSIFICAÇÃO DA EVIDÊNCIA
+
+Cada modelo deve receber:
+
+```text
+SEM EVIDÊNCIA
+
+EVIDÊNCIA FRACA
+
+EVIDÊNCIA INCONCLUSIVA
+
+SINAL PROMISSOR
+
+SINAL ROBUSTO
+```
+
+Nunca chamar automaticamente algo de:
+
+```text
+PREVISÃO GARANTIDA
+```
+
+ou:
+
+```text
+NÚMERO CERTO
+```
+
+---
+
+# 49. DASHBOARD DE EVIDÊNCIA
+
+Criar:
+
+# 🔬 EVIDÊNCIA
+
+Mostrar:
+
+```text
+Modelo
+Baseline
+Acertos
+Esperado
+Lift
+P-value
+Intervalo
+Out-of-sample
+Robustez
+Sessões
+Períodos
+Status
+```
+
+---
+
+# 50. PÁGINA DE PREVISÃO
+
+Mostrar:
+
+```text
+TOP MILHARES
+
+#1 XXXX
+Score
+Baseline
+Evidências
+Confiança
+
+#2 XXXX
+...
+
+#10 XXXX
+...
+```
+
+Ao lado:
+
+```text
+⚠ O ranking é uma saída estatística do modelo.
+Não representa garantia de ocorrência.
+```
+
+---
+
+# 51. AUDITORIA COMPLETA
+
+Criar:
+
+# AUDITORIA
+
+Registrar:
+
+* importações;
+* alterações;
+* modelos;
+* parâmetros;
+* previsões;
+* backtests;
+* versões;
+* erros;
+* leakage;
+* previsões congeladas.
+
+---
+
+# 52. VERSÃO DOS MODELOS
+
+Todo modelo deve possuir:
+
+```text
+model_id
+model_name
+version
+parameters
+features_version
+training_period
+created_at
+```
+
+Se o modelo mudar:
+
+```text
+v1
+v2
+v3
+```
+
+não sobrescrever o histórico.
+
+---
+
+# 53. REPRODUTIBILIDADE
+
+Uma previsão antiga deve poder ser reproduzida.
+
+Guardar:
+
+```text
+dados utilizados
+cutoff
+features
+modelo
+parâmetros
+seed
+versão
+```
+
+Se o algoritmo for estocástico, armazenar random seed.
+
+---
+
+# 54. TESTES AUTOMATIZADOS
+
+Criar testes para:
+
+## Dados
+
+* importação;
+* duplicidade;
+* zeros à esquerda;
+* sessões;
+* datas.
+
+## Estatística
+
+* frequência;
+* atraso;
+* baseline;
+* probabilidade.
+
+## Temporal
+
+* cutoff;
+* walk-forward;
+* snapshot.
+
+## Segurança
+
+* leakage;
+* look-ahead.
+
+## Modelo
+
+* treinamento;
+* previsão;
+* reproducibilidade.
+
+---
+
+# 55. TESTE CRÍTICO DE LEAKAGE
+
+Criar deliberadamente uma variável contendo informação futura.
+
+O sistema deve detectar:
+
+```text
+LEAKAGE
+```
+
+e rejeitar o backtest.
+
+Esse teste deve passar antes da versão ser considerada pronta.
+
+---
+
+# 56. ARQUITETURA DE MENUS
+
+Menu principal:
+
+```text
+🏠 Dashboard
+
+📥 Dados
+   ├── Importar Excel/CSV
+   ├── Inserir Resultado
+   ├── Histórico
+   └── Qualidade dos Dados
+
+📊 Análise
+   ├── Milhares
+   ├── Centenas
+   ├── Dezenas
+   ├── Unidades
+   ├── Frequência
+   ├── Atrasos
+   ├── Markov
+   └── Sessões
+
+🧪 Modelos
+   ├── Estatísticos
+   ├── Markov
+   ├── Machine Learning
+   └── Ensemble
+
+🔬 Backtesting
+   ├── Walk-forward
+   ├── Monte Carlo
+   ├── Baseline
+   ├── Out-of-sample
+   └── Robustez
+
+🎯 Previsão Atual
+
+📈 Performance
+
+🛡️ Auditoria
+
+⚙️ Configurações
+```
+
+---
+
+# 57. FLUXO PRINCIPAL DO USUÁRIO
+
+O usuário deve conseguir fazer:
+
+```text
+1. IMPORTAR HISTÓRICO
+        ↓
+2. VALIDAR
+        ↓
+3. CONFIRMAR
+        ↓
+4. ANALISAR
+        ↓
+5. ESCOLHER MODELO
+        ↓
+6. EXECUTAR BACKTEST
+        ↓
+7. COMPARAR COM BASELINE
+        ↓
+8. VALIDAR ROBUSTEZ
+        ↓
+9. GERAR PREVISÃO ATUAL
+        ↓
+10. REGISTRAR RESULTADO
+        ↓
+11. ATUALIZAR SISTEMA
+```
+
+---
+
+# 58. REGRA PARA O HISTÓRICO ATUAL
+
+O usuário pode fornecer todo o histórico disponível de uma só vez.
+
+Isso é correto.
+
+Exemplo:
+
+```text
+2018
+2019
+2020
+2021
+2022
+2023
+2024
+2025
+2026
+```
+
+O sistema não deve apagar dados futuros.
+
+O mecanismo temporal é que determina o que cada modelo pode enxergar.
+
+---
+
+# 59. EXEMPLO DE BACKTEST
+
+Suponha:
+
+```text
+10.000 concursos
+```
+
+e:
+
+```text
+1 milhar selecionada
+10 posições
+```
+
+Baseline aproximado:
+
+```text
+p ≈ 0,001
+```
+
+Acertos esperados:
+
+```text
+10.000 × 0,001
+≈ 10
+```
+
+Se o modelo conseguir:
+
+```text
+11
+```
+
+isso não é evidência forte por si só.
+
+Se conseguir:
+
+```text
+30
+```
+
+merece investigação.
+
+Mas ainda precisa passar por:
+
+```text
+Monte Carlo
+out-of-sample
+holdout
+walk-forward
+robustez
+múltiplas comparações
+```
+
+---
+
+# 60. O SISTEMA DEVE MOSTRAR A DIFERENÇA ENTRE:
+
+```text
+ACERTO OBSERVADO
+```
+
+e:
+
+```text
+ACERTO ESPERADO
+```
+
+e:
+
+```text
+ACERTO ESPERADO POR ACASO
+```
+
+e:
+
+```text
+ACERTO FORA DA AMOSTRA
+```
+
+Não misturar esses conceitos.
+
+---
+
+# 61. STATUS FINAL DE UM MODELO
+
+Exemplo:
+
+```text
+MODELO MARKOV
+
+Treino:
+✓
+
+Backtest:
+✓
+
+Baseline:
++12%
+
+Monte Carlo:
+inconclusivo
+
+Out-of-sample:
++5%
+
+Robustez:
+baixa
+
+Status:
+
+⚠ INCONCLUSIVO
+```
+
+Isso é preferível a declarar sucesso prematuramente.
+
+---
+
+# 62. PROTEÇÃO CONTRA OVERFITTING
+
+Nunca permitir que o usuário:
+
+```text
+teste parâmetros
+↓
+veja o melhor resultado
+↓
+use exatamente esse resultado como prova
+```
+
+O sistema deve alertar:
+
+> "Este parâmetro foi selecionado após observar o período de teste. O resultado pode estar contaminado por seleção retrospectiva."
+
+---
+
+# 63. SELEÇÃO DE MODELO
+
+O modelo final deve ser selecionado utilizando:
+
+```text
+TREINO
++
+VALIDAÇÃO
+```
+
+O:
+
+```text
+TESTE FINAL
+```
+
+deve permanecer separado.
+
+---
+
+# 64. MODELO ATUAL E HISTÓRICO
+
+Existem duas operações diferentes:
+
+## BACKTEST
+
+Pergunta:
+
+> "O que o modelo teria feito naquela época?"
+
+## PREVISÃO ATUAL
+
+Pergunta:
+
+> "Dado tudo que sabemos agora, qual é o ranking produzido pelo modelo?"
+
+Nunca confundir as duas.
+
+---
+
+# 65. INDICADOR DE DATA
+
+Sempre mostrar:
+
+```text
+Último dado conhecido:
+[DATA/HORA]
+
+Próximo evento:
+[DATA/HORA]
+
+Cutoff:
+[DATA/HORA]
+```
+
+---
+
+# 66. PRINCÍPIO DE TRANSPARÊNCIA
+
+O sistema deve preferir:
+
+> "não há evidência suficiente"
+
+a:
+
+> "encontramos uma estratégia vencedora"
+
+quando os dados não sustentarem a segunda afirmação.
+
+---
+
+# 67. RESULTADO FINAL ESPERADO
+
+O produto final deve funcionar como:
+
+# LOTOCE QUANT LAB
+
+Um laboratório capaz de responder:
+
+### Pergunta 1
+
+Existe algum padrão estatístico?
+
+### Pergunta 2
+
+Esse padrão supera o acaso?
+
+### Pergunta 3
+
+Ele funciona fora da amostra?
+
+### Pergunta 4
+
+Ele funciona em períodos diferentes?
+
+### Pergunta 5
+
+Ele funciona em manhã, tarde e noite?
+
+### Pergunta 6
+
+Ele continua funcionando quando novos resultados chegam?
+
+### Pergunta 7
+
+Ele sobrevive a controles contra overfitting?
+
+### Pergunta 8
+
+Existe alguma vantagem econômica depois dos custos?
+
+---
+
+# 68. CRITÉRIO DE CONCLUSÃO
+
+Não declarar o projeto "bem-sucedido" porque o sistema produz números.
+
+O projeto só poderá afirmar que encontrou evidência de uma possível vantagem quando houver:
+
+```text
+✓ dados confiáveis
+✓ ordenação temporal correta
+✓ cutoff correto
+✓ zero leakage
+✓ walk-forward
+✓ baseline
+✓ Monte Carlo
+✓ out-of-sample
+✓ holdout
+✓ robustez
+✓ controle de múltiplos testes
+✓ reproducibilidade
+```
+
+Mesmo assim, utilizar linguagem como:
+
+> "evidência de desempenho superior ao baseline"
+
+e não:
+
+> "garantia de acerto."
+
+---
+
+# 69. ORDEM DE IMPLEMENTAÇÃO
+
+Não tentar implementar tudo simultaneamente.
+
+Implementar nesta ordem:
+
+## FASE 1 — DADOS
+
+1. Banco
+2. Excel
+3. CSV
+4. Importação
+5. Validação
+6. Sessões
+7. Histórico
+
+## FASE 2 — TEMPO
+
+8. event_datetime
+9. cutoff
+10. snapshots
+11. ordenação
+12. prevenção de leakage
+
+## FASE 3 — ANÁLISE
+
+13. frequência
+14. atraso
+15. recorrência
+16. posições
+17. sessões
+18. Markov
+
+## FASE 4 — BACKTEST
+
+19. baseline
+20. random
+21. walk-forward
+22. Monte Carlo
+23. out-of-sample
+24. holdout
+
+## FASE 5 — MODELOS
+
+25. estatísticos
+26. ML
+27. ensemble
+
+## FASE 6 — PREVISÃO
+
+28. ranking
+29. previsão atual
+30. atualização automática
+
+## FASE 7 — AUDITORIA
+
+31. logs
+32. versões
+33. snapshots
+34. reproducibilidade
+35. leakage detector
+
+## FASE 8 — INTERFACE
+
+36. dashboard
+37. gráficos
+38. filtros
+39. relatórios
+40. experiência do usuário
+
+---
+
+# 70. ENTREGA FINAL DA IA
+
+Antes de declarar o sistema concluído, apresentar um relatório técnico contendo:
+
+```text
+Arquitetura atual
+Alterações realizadas
+Banco de dados
+Estrutura de dados
+Fluxo de importação
+Fluxo temporal
+Modelos implementados
+Backtest implementado
+Baseline
+Monte Carlo
+Walk-forward
+Out-of-sample
+Leakage detection
+Auditoria
+Testes automatizados
+Pendências
+```
+
+Também apresentar:
+
+```text
+quantidade de arquivos modificados
+quantidade de testes
+testes aprovados
+testes reprovados
+erros conhecidos
+```
+
+Se algo não estiver implementado, declarar explicitamente.
+
+NÃO informar que está implementado se estiver apenas planejado.
+
+---
+
+# 71. REGRA MAIS IMPORTANTE DE TODAS
+
+O sistema deve sempre conseguir responder:
+
+> **"Para esta previsão específica, quais dados estavam disponíveis naquele momento?"**
+
+Se não conseguir responder isso de forma auditável, a arquitetura temporal está incompleta.
+
+O sistema deve ser construído em torno dessa pergunta.
