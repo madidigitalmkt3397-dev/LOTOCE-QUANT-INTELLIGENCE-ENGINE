@@ -1,140 +1,483 @@
--- ============================================================
--- BANCO ÚNICO + PREVISÕES CONGELADAS (PostgreSQL)
--- ============================================================
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+version: '3.8'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: lqip_user
+      POSTGRES_PASSWORD: lqip_password
+      POSTGRES_DB: lqip_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+  fastapi==0.104.1
+uvicorn==0.24.0
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+pandas==2.1.3
+numpy==1.26.2
+python-multipart==0.0.6
+openpyxl==3.1.2
+import os
+from datetime import datetime
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, ForeignKey, Numeric, JSON, Text
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
--- 1. ENUMS
-CREATE TYPE draw_session AS ENUM ('MANHA', 'TARDE', 'NOITE');
-CREATE TYPE prediction_status AS ENUM ('OPEN', 'RESOLVED', 'INVALIDATED');
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://lqip_user:lqip_password@localhost:5432/lqip_db")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
--- 2. HISTÓRICO: EVENTOS (draws)
-CREATE TABLE draws (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    draw_date DATE NOT NULL,
-    draw_time TIME,
-    event_datetime TIMESTAMPTZ NOT NULL,
-    session draw_session NOT NULL,
-    contest_number BIGINT,
-    source VARCHAR(100),
-    imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (draw_date, session, contest_number)
-);
-CREATE INDEX idx_draws_event_datetime ON draws(event_datetime);
-CREATE INDEX idx_draws_session_datetime ON draws(session, event_datetime);
+class Draw(Base):
+    __tablename__ = "draws"
+    id = Column(Integer, primary_key=True, index=True)
+    draw_date = Column(DateTime, nullable=False)
+    session = Column(String(50), nullable=False) # 'MANHA', 'TARDE', 'NOITE'
+    contest_number = Column(String(50), nullable=True)
+    event_datetime = Column(DateTime, nullable=False)
+    is_time_official = Column(Boolean, default=False)
+    temporal_source = Column(String(50), default="LOGICAL_SESSION_ORDER")
+    imported_at = Column(DateTime, default=datetime.utcnow)
+    results = relationship("DrawResult", back_populates="draw", cascade="all, delete-orphan")
 
--- 3. HISTÓRICO: RESULTADOS (draw_results)
-CREATE TABLE draw_results (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    draw_id UUID NOT NULL REFERENCES draws(id) ON DELETE CASCADE,
-    position SMALLINT NOT NULL,
-    number CHAR(4) NOT NULL,
-    thousands SMALLINT NOT NULL,
-    hundreds SMALLINT NOT NULL,
-    tens SMALLINT NOT NULL,
-    units SMALLINT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT chk_position CHECK (position BETWEEN 1 AND 10),
-    CONSTRAINT chk_number_format CHECK (number ~ '^[0-9]{4}$'),
-    CONSTRAINT chk_digits CHECK (
-        thousands BETWEEN 0 AND 9 AND hundreds BETWEEN 0 AND 9 AND 
-        tens BETWEEN 0 AND 9 AND units BETWEEN 0 AND 9
-    ),
-    UNIQUE(draw_id, position)
-);
-CREATE INDEX idx_draw_results_draw ON draw_results(draw_id);
-CREATE INDEX idx_draw_results_number ON draw_results(number);
+class DrawResult(Base):
+    __tablename__ = "draw_results"
+    id = Column(Integer, primary_key=True, index=True)
+    draw_id = Column(Integer, ForeignKey("draws.id"))
+    position = Column(Integer, nullable=False)
+    number = Column(String(4), nullable=False) # GARANTE ZEROS A ESQUERDA
+    draw = relationship("Draw", back_populates="results")
 
--- 4. INFRAESTRUTURA: IMPORTAÇÕES E MODELOS
-CREATE TABLE import_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    filename VARCHAR(500) NOT NULL,
-    file_type VARCHAR(20) NOT NULL,
-    file_hash VARCHAR(128),
-    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    completed_at TIMESTAMPTZ
-);
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+    id = Column(Integer, primary_key=True, index=True)
+    event_timestamp = Column(DateTime, default=datetime.utcnow)
+    action = Column(String(100), nullable=False)
+    reason = Column(Text, nullable=True)
 
-CREATE TABLE models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(150) NOT NULL,
-    version VARCHAR(50) NOT NULL,
-    model_type VARCHAR(100) NOT NULL,
-    parameters JSONB NOT NULL DEFAULT '{}'::JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(name, version)
-);
+class FrozenPrediction(Base):
+    __tablename__ = "frozen_predictions"
+    id = Column(Integer, primary_key=True, index=True)
+    target_event_datetime = Column(DateTime, nullable=False)
+    cutoff_datetime = Column(DateTime, nullable=False)
+    model_name = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    items = relationship("FrozenPredictionItem", back_populates="prediction", cascade="all, delete-orphan")
 
-CREATE TABLE backtest_runs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    model_id UUID REFERENCES models(id) ON DELETE SET NULL,
-    name VARCHAR(200) NOT NULL,
-    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    cutoff_strategy VARCHAR(100),
-    parameters JSONB NOT NULL DEFAULT '{}'::JSONB,
-    metrics JSONB NOT NULL DEFAULT '{}'::JSONB,
-    leakage_detected BOOLEAN NOT NULL DEFAULT FALSE,
-    status VARCHAR(30) NOT NULL DEFAULT 'RUNNING',
-    completed_at TIMESTAMPTZ
-);
+class FrozenPredictionItem(Base):
+    __tablename__ = "frozen_prediction_items"
+    id = Column(Integer, primary_key=True, index=True)
+    prediction_id = Column(Integer, ForeignKey("frozen_predictions.id"))
+    milhar = Column(String(4), nullable=False)
+    score = Column(Numeric, nullable=False)
+    prediction = relationship("FrozenPrediction", back_populates="items")
 
--- 5. PREVISÕES CONGELADAS (Cabeçalho)
-CREATE TABLE prediction_runs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    model_id UUID REFERENCES models(id) ON DELETE SET NULL,
-    backtest_run_id UUID REFERENCES backtest_runs(id) ON DELETE SET NULL,
-    model_name VARCHAR(150) NOT NULL,
-    model_version VARCHAR(50) NOT NULL,
-    target_draw_id UUID REFERENCES draws(id) ON DELETE SET NULL,
-    target_event_datetime TIMESTAMPTZ NOT NULL,
-    target_session draw_session NOT NULL,
-    cutoff_datetime TIMESTAMPTZ NOT NULL, 
-    last_data_datetime TIMESTAMPTZ,
-    parameters JSONB NOT NULL DEFAULT '{}'::JSONB,
-    features JSONB NOT NULL DEFAULT '{}'::JSONB,
-    dataset_hash VARCHAR(128),
-    model_hash VARCHAR(128),
-    status prediction_status NOT NULL DEFAULT 'OPEN',
-    leakage_detected BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    resolved_at TIMESTAMPTZ
-);
-CREATE INDEX idx_prediction_runs_target ON prediction_runs(target_event_datetime);
-CREATE INDEX idx_prediction_runs_cutoff ON prediction_runs(cutoff_datetime);
+Base.metadata.create_all(bind=engine)
+import io
+import pandas as pd
+from datetime import datetime
 
--- 6. PREVISÕES CONGELADAS (Itens / Ranking Imutável)
-CREATE TABLE frozen_prediction_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    prediction_run_id UUID NOT NULL REFERENCES prediction_runs(id) ON DELETE RESTRICT,
-    ranking INTEGER NOT NULL CHECK (ranking > 0),
-    number CHAR(4) NOT NULL CHECK (number ~ '^[0-9]{4}$'),
-    score NUMERIC(18,10),
-    estimated_probability NUMERIC(18,15) CHECK (estimated_probability IS NULL OR (estimated_probability >= 0 AND estimated_probability <= 1)),
-    actual_hit BOOLEAN,
-    actual_position SMALLINT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(prediction_run_id, ranking),
-    UNIQUE(prediction_run_id, number)
-);
+VALID_SESSIONS = ["MANHÃ", "TARDE", "NOITE"]
+SESSION_MAP = {"MANHÃ": "MANHA", "TARDE": "TARDE", "NOITE": "NOITE"}
 
--- 7. RECONCILIAÇÃO / RESULTADOS DA PREVISÃO
-CREATE TABLE prediction_results (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    prediction_run_id UUID NOT NULL REFERENCES prediction_runs(id) ON DELETE RESTRICT,
-    evaluated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    top_1_hit BOOLEAN,
-    top_10_hit BOOLEAN,
-    total_hits INTEGER DEFAULT 0,
-    UNIQUE(prediction_run_id)
-);
+def _enforce_4_digits(val) -> str:
+    if pd.isna(val) or str(val).strip() == "": return None
+    clean_val = ''.join(filter(str.isdigit, str(val)))
+    if not clean_val: return None
+    return clean_val.zfill(4)[-4:] # Garante exatos 4 digitos
 
--- 8. AUDITORIA
-CREATE TABLE audit_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    entity_type VARCHAR(100) NOT NULL,
-    entity_id UUID,
-    action VARCHAR(100) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+def parse_text_payload(text: str):
+    lines = text.strip().split("\n")
+    session, date_str = None, None
+    results = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line: continue
+        if "Extração" in line:
+            raw_session = line.replace("Extração", "").strip().upper()
+            if raw_session not in VALID_SESSIONS:
+                raise ValueError(f"Sessão não padrão detectada: {raw_session}. Requer mapeamento manual.")
+            session = SESSION_MAP[raw_session]
+        elif "Dia" in line:
+            date_str = line.replace("Dia", "").strip()
+        elif "PRÊMIO" in line:
+            continue
+        elif line.isdigit():
+            results.append(_enforce_4_digits(line))
+            
+    if not session or not date_str or len(results) == 0:
+        raise ValueError("Dados insuficientes. Data, Sessão e ao menos 1 prêmio são obrigatórios.")
+        
+    event_dt = datetime.strptime(date_str, "%d/%m/%Y")
+    return {"date": event_dt, "session": session, "results": results[:10]}
+
+def parse_excel_file(file_bytes: bytes):
+    df = pd.read_excel(io.BytesIO(file_bytes))
+    parsed_draws = []
+    
+    for _, row in df.iterrows():
+        raw_session = str(row.get('Sessao', '')).strip().upper()
+        if raw_session not in SESSION_MAP.values() and raw_session not in VALID_SESSIONS:
+             raise ValueError(f"Sessão não padrão detectada: {raw_session}. Ajuste a planilha.")
+        
+        session = SESSION_MAP.get(raw_session, raw_session)
+        date_val = row.get('Data')
+        if isinstance(date_val, str):
+            date_val = datetime.strptime(date_val, "%d/%m/%Y")
+            
+        results = []
+        for i in range(1, 11):
+            pos_key = f'Premio_{i}'
+            if pos_key in row:
+                num = _enforce_4_digits(row[pos_key])
+                if num: results.append(num)
+                
+        if len(results) > 0:
+            parsed_draws.append({
+                "date": date_val,
+                "session": session,
+                "results": results
+            })
+    return parsed_draws
+    from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from database import Draw, DrawResult
+import pandas as pd
+import numpy as np
+
+class QuantEngine:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_safe_history(self, cutoff_datetime: datetime) -> pd.DataFrame:
+        query = self.db.query(Draw, DrawResult).join(DrawResult).filter(
+            Draw.event_datetime <= cutoff_datetime
+        ).order_by(Draw.event_datetime.asc())
+        
+        data = [{"date": d.event_datetime, "session": d.session, "pos": r.position, "milhar": r.number} for d, r in query.all()]
+        return pd.DataFrame(data)
+
+    def calculate_ranking(self, cutoff_datetime: datetime):
+        df = self.get_safe_history(cutoff_datetime)
+        if df.empty: return []
+
+        # Estatística Clássica: Frequência
+        freq = df['milhar'].value_counts().to_dict()
+        
+        # Peso Temporal Adaptativo (EWMA - Decay) - CURTO PRAZO
+        # Janela de decaimento: dados recentes pesam mais.
+        df['weight'] = np.exp(np.linspace(-5, 0, len(df)))
+        recent_scores = df.groupby('milhar')['weight'].sum().to_dict()
+        
+        ranking = []
+        for i in range(10000):
+            m_str = str(i).zfill(4)
+            f_val = freq.get(m_str, 0)
+            r_val = recent_scores.get(m_str, 0)
+            
+            # Consenso: 30% Longo Prazo, 70% Curto Prazo (Recência)
+            score = (f_val * 0.3) + (r_val * 0.7)
+            if score > 0:
+                ranking.append({
+                    "milhar": m_str,
+                    "score": round(score, 4),
+                    "freq_historica": f_val,
+                    "score_recente": round(r_val, 4)
+                })
+                
+        ranking.sort(key=lambda x: x['score'], reverse=True)
+        return ranking[:200]
+
+    def execute_walk_forward(self):
+        # Walk-Forward Backtest (Mês a Mês simulado)
+        results = []
+        start_date = datetime.utcnow() - timedelta(days=180)
+        current_cutoff = start_date
+        
+        while current_cutoff < datetime.utcnow():
+            ranking = self.calculate_ranking(current_cutoff)
+            if not ranking:
+                current_cutoff += timedelta(days=15)
+                continue
+                
+            top_10 = [r['milhar'] for r in ranking[:10]]
+            
+            # Busca O-O-S (Out Of Sample) REAL
+            next_draw = self.db.query(Draw).filter(Draw.event_datetime > current_cutoff).order_by(Draw.event_datetime.asc()).first()
+            if not next_draw: break
+            
+            actual = [r.number for r in next_draw.results]
+            hits = len(set(top_10).intersection(set(actual)))
+            
+            results.append({
+                "cutoff": current_cutoff.strftime("%d/%m/%Y"),
+                "target_date": next_draw.event_datetime.strftime("%d/%m/%Y"),
+                "session": next_draw.session,
+                "hits": hits,
+                "baseline": 0.01 # Esperado aleatoriamente para 10 milhares
+            })
+            current_cutoff = next_draw.event_datetime
+            
+        return results
+            from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from database import SessionLocal, Draw, DrawResult, AuditEvent
+from parser import parse_text_payload, parse_excel_file
+from quant_engine import QuantEngine
+from datetime import datetime
+from pydantic import BaseModel
+
+app = FastAPI(title="LQIP Core API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+def get_db():
+    db = SessionLocal()
+    try: yield db
+    finally: db.close()
+
+class PastePayload(BaseModel):
+    text: str
+
+def _save_draw(parsed: dict, db: Session):
+    exists = db.query(Draw).filter_by(draw_date=parsed['date'], session=parsed['session']).first()
+    if exists: return False # Ignora duplicidade
+    
+    # Lógica de ordenação temporal (MANHA < TARDE < NOITE)
+    hour = {"MANHA": 14, "TARDE": 19, "NOITE": 22}.get(parsed['session'], 12)
+    evt_dt = parsed['date'].replace(hour=hour, minute=0, second=0)
+    
+    new_draw = Draw(draw_date=parsed['date'], session=parsed['session'], event_datetime=evt_dt)
+    db.add(new_draw)
+    db.flush()
+    
+    for pos, num in enumerate(parsed['results'], 1):
+        db.add(DrawResult(draw_id=new_draw.id, position=pos, number=num))
+    return True
+
+@app.post("/api/import/paste")
+def import_paste(payload: PastePayload, db: Session = Depends(get_db)):
+    try:
+        parsed = parse_text_payload(payload.text)
+        if _save_draw(parsed, db):
+            db.add(AuditEvent(action="IMPORT_PASTE", reason=f"Importado {parsed['session']} - {parsed['date']}"))
+            db.commit()
+            return {"status": "success", "message": "Importado com sucesso."}
+        return {"status": "ignored", "message": "Sorteio já existente (Duplicidade)."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/import/excel")
+async def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    try:
+        content = await file.read()
+        draws = parse_excel_file(content)
+        saved = 0
+        for d in draws:
+            if _save_draw(d, db): saved += 1
+        db.add(AuditEvent(action="IMPORT_EXCEL", reason=f"Planilha importada. {saved} novos registros."))
+        db.commit()
+        return {"status": "success", "message": f"{saved} sorteios importados do Excel."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/quant/ranking")
+def get_ranking(db: Session = Depends(get_db)):
+    engine = QuantEngine(db)
+    ranking = engine.calculate_ranking(cutoff_datetime=datetime.utcnow())
+    return {"cutoff": datetime.utcnow().isoformat(), "ranking": ranking}
+
+@app.post("/api/quant/backtest")
+def run_backtest(db: Session = Depends(get_db)):
+    engine = QuantEngine(db)
+    results = engine.execute_walk_forward()
+    return {"status": "success", "results": results}
+        import React, { useState, useEffect, useRef } from 'react';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('IMPORT');
+  const [pasteData, setPasteData] = useState("");
+  const [ranking, setRanking] = useState([]);
+  const [backtest, setBacktest] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const apiCall = async (url: string, options?: RequestInit) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000${url}`, options);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Erro na API");
+      return data;
+    } catch (e: any) {
+      alert(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasteImport = async () => {
+    const data = await apiCall('/api/import/paste', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: pasteData })
+    });
+    if (data) {
+      alert(data.message);
+      setPasteData("");
+    }
+  };
+
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const formData = new FormData();
+    formData.append("file", e.target.files[0]);
+    const data = await apiCall('/api/import/excel', { method: 'POST', body: formData });
+    if (data) alert(data.message);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const loadRanking = async () => {
+    const data = await apiCall('/api/quant/ranking');
+    if (data) setRanking(data.ranking);
+  };
+
+  const runBacktest = async () => {
+    const data = await apiCall('/api/quant/backtest', { method: 'POST' });
+    if (data) setBacktest(data.results);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-8 font-sans">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">LQIP - Quant Intelligence Platform</h1>
+        <p className="text-gray-600">Arquitetura + Dados + Importação + Análise Temporal</p>
+      </header>
+
+      <div className="flex gap-4 mb-6">
+        {['IMPORT', 'RANKING', 'BACKTEST'].map(tab => (
+          <button 
+            key={tab}
+            className={`px-6 py-2 rounded font-bold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <main className="bg-white p-6 rounded shadow min-h-[500px]">
+        {loading && <div className="text-blue-600 font-bold mb-4">Processando...</div>}
+
+        {activeTab === 'IMPORT' && (
+          <div className="grid grid-cols-2 gap-8">
+            <div className="border p-4 rounded bg-gray-50">
+              <h2 className="text-xl font-bold mb-4">📥 IMPORTAR EXCEL</h2>
+              <p className="text-sm text-gray-600 mb-4">Selecione o arquivo .xlsx. Colunas esperadas: Data, Sessao, Premio_1 a Premio_10.</p>
+              <input type="file" accept=".xlsx" className="hidden" ref={fileInputRef} onChange={handleExcelImport} />
+              <button 
+                className="bg-green-600 text-white px-4 py-2 rounded w-full font-bold"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                SELECIONAR ARQUIVO .XLSX
+              </button>
+            </div>
+
+            <div className="border p-4 rounded bg-gray-50">
+              <h2 className="text-xl font-bold mb-4">📋 COLAR RESULTADOS</h2>
+              <textarea 
+                className="w-full h-48 p-2 border rounded font-mono text-sm"
+                placeholder={`Extração Manhã\nDia 13/07/2026\n\n1° PRÊMIO\n8626...`}
+                value={pasteData}
+                onChange={(e) => setPasteData(e.target.value)}
+              />
+              <button 
+                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded w-full font-bold"
+                onClick={handlePasteImport}
+              >
+                PROCESSAR TEXTO
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'RANKING' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">🎯 Ranking Consolidado (Curto + Longo Prazo)</h2>
+              <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={loadRanking}>🔄 ATUALIZAR</button>
+            </div>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-2 border">Pos</th>
+                  <th className="p-2 border">Milhar</th>
+                  <th className="p-2 border">Score Final</th>
+                  <th className="p-2 border">Score Recente</th>
+                  <th className="p-2 border">Freq Histórica</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranking.slice(0, 100).map((r: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="p-2 border font-bold">{idx + 1}º</td>
+                    <td className="p-2 border font-mono text-lg">{r.milhar}</td>
+                    <td className="p-2 border font-bold text-blue-600">{r.score.toFixed(4)}</td>
+                    <td className="p-2 border">{r.score_recente.toFixed(4)}</td>
+                    <td className="p-2 border">{r.freq_historica}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'BACKTEST' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">🧪 Walk-Forward Backtesting O-O-S</h2>
+              <button className="bg-purple-600 text-white px-4 py-2 rounded" onClick={runBacktest}>▶ EXECUTAR SIMULAÇÃO</button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Testa o modelo avançando no tempo com cutoff estrito. Evita contaminação do futuro.</p>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-2 border">Cutoff Simulado</th>
+                  <th className="p-2 border">Alvo O-O-S</th>
+                  <th className="p-2 border">Sessão Alvo</th>
+                  <th className="p-2 border">Acertos no Top 10</th>
+                  <th className="p-2 border">Acertos Esperados (Acaso)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {backtest.map((b: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="p-2 border">{b.cutoff}</td>
+                    <td className="p-2 border font-bold text-gray-700">{b.target_date}</td>
+                    <td className="p-2 border">{b.session}</td>
+                    <td className="p-2 border font-bold text-green-600">{b.hits}</td>
+                    <td className="p-2 border">{b.baseline}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+                  
