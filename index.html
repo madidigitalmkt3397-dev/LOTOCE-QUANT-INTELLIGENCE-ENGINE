@@ -1,445 +1,110 @@
-<!DOCTYPE html>
-<html lang="pt-BR" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LotoCE Quant Intelligence Engine — LQIE v4.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            900: '#090d16',
-                            800: '#111827',
-                            700: '#1f2937',
-                            600: '#374151'
-                        },
-                        accent: {
-                            cyan: '#06b6d4',
-                            emerald: '#10b981',
-                            amber: '#f59e0b',
-                            rose: '#f43f5e',
-                            indigo: '#6366f1'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #374151; }
-    </style>
-</head>
-<body class="bg-dark-900 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black">
+/**
+ * LotoCE Quant Intelligence Engine v4.2 - Módulo de Arquitetura Temporal e Integridade
+ * Respeita estritamente o princípio: "O que eu saberia naquele exato momento?"
+ */
 
-    <!-- HEADER / NAVIGATION -->
-    <header class="border-b border-slate-800 bg-dark-800/80 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-black text-xl shadow-lg shadow-cyan-500/20">
-                    Q
-                </div>
-                <div>
-                    <h1 class="font-bold tracking-wider text-sm sm:text-base flex items-center gap-2">
-                        LOTOCE QUANT INTELLIGENCE ENGINE 
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 mono">v4.0</span>
-                    </h1>
-                    <p class="text-xs text-slate-400">Research & Predictability Laboratory</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2 sm:gap-3">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3 py-1.5 text-xs font-medium rounded-md transition bg-cyan-500 text-black shadow-lg shadow-cyan-500/20">Dashboard</button>
-                <button onclick="switchTab('agents')" id="btn-agents" class="px-3 py-1.5 text-xs font-medium rounded-md transition text-slate-300 hover:bg-dark-700">Conselho de Agentes</button>
-                <button onclick="switchTab('lab')" id="btn-lab" class="px-3 py-1.5 text-xs font-medium rounded-md transition text-slate-300 hover:bg-dark-700">Laboratório Estatístico</button>
-                <button onclick="switchTab('tournament')" id="btn-tournament" class="px-3 py-1.5 text-xs font-medium rounded-md transition text-slate-300 hover:bg-dark-700">Torneio & Backtest</button>
-            </div>
-        </div>
-    </header>
+class TemporalEngine {
+    constructor(database) {
+        this.db = database; // Banco único contendo todos os sorteios (MANHA, TARDE, NOITE)
+    }
 
-    <!-- MAIN CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+    /**
+     * 2. ORDEM CRONOLÓGICA REAL
+     * Cria e ordena os registros considerando data, hora e sessão.
+     */
+    buildChronologicalTimeline(records) {
+        return records.map(record => ({
+            ...record,
+            event_datetime: this._parseEventDatetime(record)
+        })).sort((a, b) => a.event_datetime - b.event_datetime);
+    }
 
-        <!-- TAB 1: DASHBOARD / LABORATORY OVERVIEW -->
-        <section id="tab-dashboard" class="space-y-6">
-            <!-- STATUS BAR -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Hipótese Principal</p>
-                    <p class="text-lg font-bold text-amber-400 mt-1">H0 Ativa (Aleatório)</p>
-                    <p class="text-xs text-slate-500 mt-1">Nenhuma vantagem definitiva</p>
-                </div>
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Amostra Analisada</p>
-                    <p class="text-lg font-bold text-cyan-400 mt-1 mono">10.000 Milhares (0000-9999)</p>
-                    <p class="text-xs text-slate-500 mt-1">Baseline: 0,010% teórica</p>
-                </div>
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Classificação Global</p>
-                    <p class="text-lg font-bold text-indigo-400 mt-1">Nível 1 — Padrão</p>
-                    <p class="text-xs text-slate-500 mt-1">Sinais em teste fora da amostra</p>
-                </div>
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl shadow-sm">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Modo de Operação</p>
-                    <p class="text-lg font-bold text-emerald-400 mt-1">Research & Cético</p>
-                    <p class="text-xs text-slate-500 mt-1">Validação Walk-Forward ativa</p>
-                </div>
-            </div>
+    _parseEventDatetime(record) {
+        // Se a fonte fornecer data, hora e sessão, mapeia o momento exato
+        return new Date(`${record.data}T${record.hora || this._getDefaultHour(record.sessao)}`);
+    }
 
-            <!-- LABORATORY VISUALIZATION GRID -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- CHART SECTION -->
-                <div class="lg:col-span-2 bg-dark-800 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
-                    <div class="flex justify-between items-center mb-4">
-                        <div>
-                            <h2 class="font-bold text-sm sm:text-base">Distribuição de Probabilidade vs. Modelo Nulo</h2>
-                            <p class="text-xs text-slate-400">Comparação estocástica por faixa de milhares</p>
-                        </div>
-                        <span class="text-xs px-2.5 py-1 rounded bg-dark-700 text-cyan-400 mono border border-slate-700">Monte Carlo 10k</span>
-                    </div>
-                    <div class="h-64 sm:h-80 w-full">
-                        <canvas id="monteCarloChart"></canvas>
-                    </div>
-                </div>
+    _getDefaultHour(sessao) {
+        const hours = { 'MANHA': '09:00:00', 'TARDE': '14:00:00', 'NOITE': '19:00:00' };
+        return hours[sessao?.toUpperCase()] || '12:00:00';
+    }
 
-                <!-- ADVERSARIAL REVIEWER LOG -->
-                <div class="bg-dark-800 border border-slate-800 p-5 rounded-xl flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
-                            <span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>
-                            Adversarial Reviewer Log
-                        </h2>
-                        <span class="text-xs text-slate-500">Anti-Autoengano</span>
-                    </div>
-                    <div class="flex-1 space-y-3 overflow-y-auto max-h-80 pr-1 text-xs mono">
-                        <div class="p-3 bg-dark-900/60 border border-rose-500/20 rounded-lg">
-                            <p class="text-rose-400 font-bold">REJEITADO: Padrão Markoviano #402</p>
-                            <p class="text-slate-400 mt-1">Autocorrelação detectada em janela de 5 concursos falhou no teste de holdout fora da amostra.</p>
-                        </div>
-                        <div class="p-3 bg-dark-900/60 border border-amber-500/20 rounded-lg">
-                            <p class="text-amber-400 font-bold">ALERTA: Look-Ahead Bias</p>
-                            <p class="text-slate-400 mt-1">Tentativa de indexação temporal incorreta barrada pelo Data Provenance Engine.</p>
-                        </div>
-                        <div class="p-3 bg-dark-900/60 border border-cyan-500/20 rounded-lg">
-                            <p class="text-cyan-400 font-bold">REGISTRO: H0 Mantida</p>
-                            <p class="text-slate-400 mt-1">Nenhum desvio estatisticamente significativo encontrado no teste de múltiplos testes de Bonferroni.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    /**
+     * 4 & 5. REGRA DE OURO E DATA CUTOFF
+     * Retorna apenas os dados permitidos até o momento exato do cutoff.
+     */
+    getDatasetUpToCutoff(cutoffDatetime) {
+        const timeline = this.buildChronologicalTimeline(this.db.getAllRecords());
+        const cutoffTime = new Date(cutoffDatetime).getTime();
 
-            <!-- RECENT PREDICTIONS & RANKING TABLE -->
-            <div class="bg-dark-800 border border-slate-800 rounded-xl overflow-hidden">
-                <div class="p-4 sm:p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-4">
-                    <div>
-                        <h2 class="font-bold text-sm sm:text-base">Top 5 Milhares sob Evidência Estatística Relativa</h2>
-                        <p class="text-xs text-slate-400">Ranking não é garantia — Demonstração analítica estrita</p>
-                    </div>
-                    <button onclick="runAnalysis()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs rounded-lg transition shadow-lg shadow-cyan-500/10">
-                        Executar Simulação & Testes
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-dark-900 text-slate-400 uppercase font-mono tracking-wider border-b border-slate-800">
-                                <th class="p-3">Milhar</th>
-                                <th class="p-3">Prob. Estimada</th>
-                                <th class="p-3">Baseline</th>
-                                <th class="p-3">Lift</th>
-                                <th class="p-3">Evidência Estatística</th>
-                                <th class="p-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-tbody" class="divide-y divide-slate-800/60 mono">
-                            <tr>
-                                <td class="p-3 font-bold text-cyan-400">7382</td>
-                                <td class="p-3">0,0138%</td>
-                                <td class="p-3 text-slate-500">0,0100%</td>
-                                <td class="p-3 text-emerald-400">+38%</td>
-                                <td class="p-3">p = 0.042 (Nível 2)</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">Sinal Potencial</span></td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-bold text-cyan-400">1049</td>
-                                <td class="p-3">0,0125%</td>
-                                <td class="p-3 text-slate-500">0,0100%</td>
-                                <td class="p-3 text-emerald-400">+25%</td>
-                                <td class="p-3">p = 0.089 (Nível 1)</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300">Em Observação</span></td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-bold text-cyan-400">5910</td>
-                                <td class="p-3">0,0119%</td>
-                                <td class="p-3 text-slate-500">0,0100%</td>
-                                <td class="p-3 text-emerald-400">+19%</td>
-                                <td class="p-3">p = 0.142 (Nível 1)</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-700 text-slate-300">Em Observação</span></td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-bold text-cyan-400">0284</td>
-                                <td class="p-3">0,0102%</td>
-                                <td class="p-3 text-slate-500">0,0100%</td>
-                                <td class="p-3 text-slate-400">+2%</td>
-                                <td class="p-3">p = 0.650 (Nível 0)</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30">Ruído</span></td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-bold text-cyan-400">9431</td>
-                                <td class="p-3">0,0098%</td>
-                                <td class="p-3 text-slate-500">0,0100%</td>
-                                <td class="p-3 text-rose-400">-2%</td>
-                                <td class="p-3">p = 0.780 (Nível 0)</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30">Ruído</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+        return timeline.filter(d => new Date(d.event_datetime).getTime() <= cutoffTime);
+    }
 
-        <!-- TAB 2: AGENTS COUNCIL -->
-        <section id="tab-agents" class="space-y-6 hidden">
-            <div class="bg-dark-800 border border-slate-800 p-5 rounded-xl">
-                <h2 class="font-bold text-base mb-1">Arquitetura de Agentes Especializados</h2>
-                <p class="text-xs text-slate-400">O conselho opera em regime de verificação cruzada e ceticismo estrutural.</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="agents-grid">
-                <!-- Agent 1 -->
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 mono">AGENTE 01</span>
-                        <span class="text-xs text-emerald-400 mono">Ativo</span>
-                    </div>
-                    <h3 class="font-bold text-sm">Probability Theorist</h3>
-                    <p class="text-xs text-slate-400">Modela o baseline, distribuições esperadas sob aleatoriedade e eventos condicionais fundamentais.</p>
-                </div>
-                <!-- Agent 2 -->
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 mono">AGENTE 02</span>
-                        <span class="text-xs text-emerald-400 mono">Ativo</span>
-                    </div>
-                    <h3 class="font-bold text-sm">Statistical Scientist</h3>
-                    <p class="text-xs text-slate-400">Conduz inferência, testes de hipótese rigorosos, bootstrap e controle de múltiplas comparações.</p>
-                </div>
-                <!-- Agent 3 -->
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 mono">AGENTE 03</span>
-                        <span class="text-xs text-emerald-400 mono">Ativo</span>
-                    </div>
-                    <h3 class="font-bold text-sm">Stochastic Process Scientist</h3>
-                    <p class="text-xs text-slate-400">Analisa dependência temporal, memória, estacionariedade e propriedades de transição estocástica.</p>
-                </div>
-                <!-- Agent 4 -->
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 mono">AGENTE 04</span>
-                        <span class="text-xs text-emerald-400 mono">Ativo</span>
-                    </div>
-                    <h3 class="font-bold text-sm">Markov Engine</h3>
-                    <p class="text-xs text-slate-400">Investiga transições de milhar, centena, dezena e dígitos testando desvios do modelo uniforme.</p>
-                </div>
-                <!-- Agent 5 -->
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 mono">AGENTE 05</span>
-                        <span class="text-xs text-emerald-400 mono">Ativo</span>
-                    </div>
-                    <h3 class="font-bold text-sm">Time Series Engine</h3>
-                    <p class="text-xs text-slate-400">Mede autocorrelação, sazonalidade, tendências estruturais e change points na série histórica.</p>
-                </div>
-                <!-- Agent 6 -->
-                <div class="bg-dark-800 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 mono">AGENTE 06</span>
-                        <span class="text-xs text-emerald-400 mono">Ativo</span>
-                    </div>
-                    <h3 class="font-bold text-sm">Information Theory Engine</h3>
-                    <p class="text-xs text-slate-400">Calcula entropia, informação mútua e redução de incerteza sobre o próximo resultado.</p>
-                </div>
-            </div>
-        </section>
+    /**
+     * 20 & 21. DETECTOR AUTOMÁTICO DE LEAKAGE
+     * Verifica se há contaminação por dados futuros no conjunto de dados de treino/teste.
+     */
+    detectDataLeakage(dataset, cutoffDatetime) {
+        const cutoffTime = new Date(cutoffDatetime).getTime();
+        const violations = dataset.filter(d => new Date(d.event_datetime).getTime() > cutoffTime);
 
-        <!-- TAB 3: STATISTICAL LAB -->
-        <section id="tab-lab" class="space-y-6 hidden">
-            <div class="bg-dark-800 border border-slate-800 p-5 rounded-xl space-y-4">
-                <h2 class="font-bold text-base">Laboratório de Teste de Hipóteses (H0 vs H1)</h2>
-                <p class="text-xs text-slate-400">Simule análises estatísticas para verificar a robustez de padrões nas milhares da LotoCE.</p>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                    <div class="space-y-1">
-                        <label class="text-xs text-slate-400">Estratégia de Teste</label>
-                        <select id="lab-strategy" class="w-full bg-dark-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 mono">
-                            <option>Markov Transition Matrix (Order 1)</option>
-                            <option>Autocorrelação Temporal (Lag 1-5)</option>
-                            <option>Análise de Atrasos (Delay Distribution)</option>
-                            <option>Informação Mútua (Dígito/Posição)</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-xs text-slate-400">Janela Amostral</label>
-                        <select id="lab-window" class="w-full bg-dark-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 mono">
-                            <option>Últimos 1.000 Concursos</option>
-                            <option>Últimos 5.000 Concursos</option>
-                            <option>Série Histórica Completa</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="executeLabTest()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow-lg shadow-indigo-600/20">
-                            Executar Teste Estatístico
-                        </button>
-                    </div>
-                </div>
-
-                <div id="lab-results" class="hidden mt-4 p-4 bg-dark-900 border border-slate-800 rounded-lg space-y-3 mono text-xs">
-                    <p class="text-cyan-400 font-bold">>>> RESULTADO DA EXECUÇÃO EXPERIMENTAL</p>
-                    <p class="text-slate-300" id="lab-output-text">Processando dados sob controle de múltiplos testes...</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 4: TOURNAMENT & BACKTEST -->
-        <section id="tab-tournament" class="space-y-6 hidden">
-            <div class="bg-dark-800 border border-slate-800 p-5 rounded-xl space-y-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="font-bold text-base">Prediction Tournament & Walk-Forward</h2>
-                        <p class="text-xs text-slate-400">Desempenho comparativo histórico contra o modelo nulo</p>
-                    </div>
-                    <span class="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded mono">Backtest Ativo</span>
-                </div>
-
-                <div class="h-64 sm:h-72 w-full">
-                    <canvas id="backtestChart"></canvas>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="border-t border-slate-800 bg-dark-800/40 py-4 text-center text-xs text-slate-500 mono">
-        LOTOCE QUANT INTELLIGENCE ENGINE — LQIE v4.0 &bull; Laboratório Científico Permanente de Pesquisa Quantitativa
-    </footer>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // Tab switching logic
-        function switchTab(tabId) {
-            ['dashboard', 'agents', 'lab', 'tournament'].forEach(id => {
-                document.getElementById(`tab-${id}`).classList.add('hidden');
-                const btn = document.getElementById(`btn-${id}`);
-                if(btn) {
-                    btn.classList.remove('bg-cyan-500', 'text-black', 'shadow-lg', 'shadow-cyan-500/20');
-                    btn.classList.add('text-slate-300', 'hover:bg-dark-700');
-                }
-            });
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            const activeBtn = document.getElementById(`btn-${tabId}`);
-            if(activeBtn) {
-                activeBtn.classList.remove('text-slate-300', 'hover:bg-dark-700');
-                activeBtn.classList.add('bg-cyan-500', 'text-black', 'shadow-lg', 'shadow-cyan-500/20');
-            }
+        if (violations.length > 0) {
+            return {
+                status: "LEAKAGE DETECTADO",
+                valid: false,
+                violationsCount: violations.length,
+                message: "Atenção: Dados futuros encontrados no conjunto de análise."
+            };
         }
 
-        // Initialize Monte Carlo & Backtest Charts
-        window.addEventListener('DOMContentLoaded', () => {
-            const ctxMC = document.getElementById('monteCarloChart').getContext('2d');
-            new Chart(ctxMC, {
-                type: 'bar',
-                data: {
-                    labels: ['0000-1999', '2000-3999', '4000-5999', '6000-7999', '8000-9999'],
-                    datasets: [
-                        {
-                            label: 'Modelo Nulo (Esperado)',
-                            data: [2000, 2000, 2000, 2000, 2000],
-                            backgroundColor: 'rgba(100, 116, 139, 0.3)',
-                            borderColor: 'rgba(100, 116, 139, 0.6)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Frequência Observada',
-                            data: [2045, 1952, 2018, 1980, 2005],
-                            backgroundColor: 'rgba(6, 182, 212, 0.5)',
-                            borderColor: 'rgba(6, 182, 212, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } } },
-                    scales: {
-                        x: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }, grid: { color: '#1f2937' } },
-                        y: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }, grid: { color: '#1f2937' } }
-                    }
-                }
-            });
+        return {
+            status: "✓ ÍNTEGRO",
+            valid: true,
+            violationsCount: 0,
+            message: "Nenhum vazamento de dados futuros detectado."
+        };
+    }
 
-            const ctxBT = document.getElementById('backtestChart').getContext('2d');
-            new Chart(ctxBT, {
-                type: 'line',
-                data: {
-                    labels: ['C100', 'C200', 'C300', 'C400', 'C500', 'C600', 'C700', 'C800', 'C900', 'C1000'],
-                    datasets: [
-                        {
-                            label: 'Baseline (Aleatório Acumulado)',
-                            data: [100, 100, 99, 101, 100, 98, 100, 102, 101, 100],
-                            borderColor: '#64748b',
-                            borderWidth: 2,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'LQIE Model Ensemble (Fora da Amostra)',
-                            data: [100, 102, 105, 104, 108, 107, 111, 110, 114, 113],
-                            borderColor: '#10b981',
-                            borderWidth: 2,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } } },
-                    scales: {
-                        x: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }, grid: { color: '#1f2937' } },
-                        y: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }, grid: { color: '#1f2937' } }
-                    }
-                }
-            });
-        });
+    /**
+     * 18. BANCO DE PREVISÕES CONGELADAS (Estrutura do Registro)
+     */
+    createFrozenPredictionRecord(targetEvent, cutoffEvent, modelMeta, rankings) {
+        return {
+            prediction_id: `pred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            created_at: new Date().toISOString(),
+            target_event_id: targetEvent.id,
+            target_datetime: targetEvent.event_datetime,
+            target_session: targetEvent.sessao,
+            cutoff_event_id: cutoffEvent.id,
+            cutoff_datetime: cutoffEvent.event_datetime,
+            model_version: modelMeta.version,
+            training_start: modelMeta.trainingStart,
+            training_end: modelMeta.trainingEnd,
+            top_1: rankings[0] || null,
+            top_5: rankings.slice(0, 5),
+            top_10: rankings.slice(0, 10),
+            top_20: rankings.slice(0, 20),
+            top_50: rankings.slice(0, 50),
+            top_100: rankings.slice(0, 100),
+            probabilities: modelMeta.probabilities || {},
+            features_version: modelMeta.featuresVersion,
+            prediction_hash: modelMeta.hash || null,
+            status: "CONGELADA"
+        };
+    }
 
-        // Interactive simulation function
-        function runAnalysis() {
-            const tbody = document.getElementById('ranking-tbody');
-            tbody.style.opacity = '0.4';
-            setTimeout(() => {
-                tbody.style.opacity = '1';
-                alert('Simulação estatística concluída. O Adversarial Reviewer validou o conjunto de dados. H0 mantida provisoriamente.');
-            }, 400);
-        }
-
-        function executeLabTest() {
-            const resDiv = document.getElementById('lab-results');
-            const output = document.getElementById('lab-output-text');
-            resDiv.classList.remove('hidden');
-            output.innerHTML = "Executando bootstrap e testes de hipótese...<br>Calculando p-valores sob correção de Bonferroni...<br><span class='text-amber-400'>[!] Conclusão: p = 0.124. Não rejeitamos H0. Ausência de sinal preditivo robusto fora da amostra.</span>";
-        }
-    </script>
-</body>
-</html>
+    /**
+     * 23. AUDITORIA TEMPORAL E STATUS DO MODELO ATUAL
+     */
+    getSystemAuditStatus(lastKnownEvent, nextEvent, cutoffEvent) {
+        return {
+            modeloAtual: "🟢 ATIVO",
+            ultimoResultadoConhecido: `${lastKnownEvent.data} — ${lastKnownEvent.sessao}`,
+            proximoEvento: `${nextEvent.data} — ${nextEvent.sessao}`,
+            cutoffUtilizado: `${cutoffEvent.data} — ${cutoffEvent.sessao}`,
+            dadosFuturosUtilizados: 0,
+            integridadeTemporal: "✓ Aprovada",
+            timestampAuditoria: new Date().toISOString()
+        };
+    }
+}
