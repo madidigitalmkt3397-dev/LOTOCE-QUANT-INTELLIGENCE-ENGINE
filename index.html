@@ -1,344 +1,72 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as XLSX from 'xlsx';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LQIP - Laboratório Estatístico</title>
 
-// --- TIPAGENS ---
-interface Draw {
-  id: string;
-  date: string; // ISO string
-  session: string;
-  results: string[];
-}
+    <!-- 1. COLE AQUI O SEU CSS PARA MANTER O LAYOUT INTACTO -->
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        /* Cole todo o seu CSS de botões, gradientes e cartões aqui */
+    </style>
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('IMPORT');
-  const [pasteData, setPasteData] = useState("");
-  const [ranking, setRanking] = useState<any[]>([]);
-  const [backtest, setBacktest] = useState<any[]>([]);
-  const [draws, setDraws] = useState<Draw[]>([]);
-  const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+    <!-- 2. IMPORTAÇÕES NECESSÁRIAS (Sem instalar nada) -->
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel (O segredo para o código não vazar na tela) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- XLSX (Para a leitura da sua planilha Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Aqui é onde o React vai injetar o seu sistema -->
+    <div id="root"></div>
 
-  // Carrega os dados do navegador ao iniciar
-  useEffect(() => {
-    const saved = localStorage.getItem('lqip_draws');
-    if (saved) setDraws(JSON.parse(saved));
-  }, []);
+    <!-- 3. O type="text/babel" É OBRIGATÓRIO AQUI -->
+    <script type="text/babel">
+        // COLE AQUI TODA A SUA LÓGICA JAVASCRIPT 
 
-  // Salva no navegador sempre que atualizar
-  const saveDraws = (newDraws: Draw[]) => {
-    setDraws(newDraws);
-    localStorage.setItem('lqip_draws', JSON.stringify(newDraws));
-  };
+        const { useState, useEffect, useRef } = React;
 
-  // --- LÓGICA DE PARSER ---
-  const enforce4Digits = (val: any) => {
-    if (!val) return null;
-    const clean = String(val).replace(/\D/g, '');
-    if (!clean) return null;
-    return clean.padStart(4, '0').slice(-4);
-  };
+        function SistemaEstatistico() {
+            // Seus estados (ex: draws, loading, activeTab)
+            const [activeTab, setActiveTab] = useState('IMPORT');
+            const [draws, setDraws] = useState([]);
+            const fileInputRef = useRef(null);
 
-  const parseText = (text: string) => {
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-    let session = "", dateStr = "";
-    const results: string[] = [];
+            // ... COLE AQUI O SEU "MOTOR QUANTITATIVO" ...
 
-    const sessionMap: any = { "MANHÃ": "MANHA", "TARDE": "TARDE", "NOITE": "NOITE" };
+            // Renderização e Layout Intacto
+            return (
+                <div>
+                    <h1>LQIP - Quant Intelligence Platform</h1>
+                    <p>Totalmente Client-Side (Sem Servidor)</p>
+                    
+                    {/* COLE AQUI O RESTANTE DO SEU RETURN (O LAYOUT) */}
+                    
+                    <div>
+                        {['IMPORT', 'RANKING', 'BACKTEST'].map(tab => (
+                            <button key={tab} onClick={() => setActiveTab(tab)}>
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
 
-    lines.forEach(line => {
-      if (line.includes("Extração")) {
-        const raw = line.replace("Extração", "").trim().toUpperCase();
-        session = sessionMap[raw] || raw;
-      } else if (line.includes("Dia")) {
-        const parts = line.replace("Dia", "").trim().split('/');
-        if (parts.length === 3) dateStr = `${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`;
-      } else if (line.match(/^\d+$/) && !line.includes("PRÊMIO")) {
-        const num = enforce4Digits(line);
-        if (num) results.push(num);
-      }
-    });
-
-    if (!session || !dateStr || results.length === 0) throw new Error("Dados insuficientes ou formato inválido.");
-    return { id: `${dateStr}-${session}`, date: dateStr, session, results: results.slice(0, 10) };
-  };
-
-  const handlePasteImport = () => {
-    try {
-      const parsed = parseText(pasteData);
-      if (draws.some(d => d.id === parsed.id)) {
-        alert("Sorteio já existente (Duplicidade).");
-        return;
-      }
-      saveDraws([...draws, parsed].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-      alert("Importado com sucesso!");
-      setPasteData("");
-    } catch (e: any) {
-      alert(e.message);
-    }
-  };
-
-  const handleExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: 'binary' });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws);
-
-      const newDraws: Draw[] = [];
-      const sessionMap: any = { "MANHÃ": "MANHA", "TARDE": "TARDE", "NOITE": "NOITE" };
-
-      data.forEach((row: any) => {
-        let rawSession = String(row['Sessao'] || '').trim().toUpperCase();
-        const session = sessionMap[rawSession] || rawSession;
-        
-        // Trata data do Excel (pode vir como número serial ou string)
-        let dateStr = "";
-        if (typeof row['Data'] === 'number') {
-          const d = new Date(Math.round((row['Data'] - 25569) * 86400 * 1000));
-          dateStr = d.toISOString();
-        } else if (typeof row['Data'] === 'string') {
-          const parts = row['Data'].split('/');
-          dateStr = `${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`;
+                    {activeTab === 'IMPORT' && (
+                        <div>
+                            <h2>IMPORTAR EXCEL</h2>
+                            {/* Resto do seu código de importação */}
+                        </div>
+                    )}
+                </div>
+            );
         }
 
-        const results: string[] = [];
-        for (let i = 1; i <= 10; i++) {
-          const num = enforce4Digits(row[`Premio_${i}`]);
-          if (num) results.push(num);
-        }
-
-        if (dateStr && session && results.length > 0) {
-          const id = `${dateStr}-${session}`;
-          newDraws.push({ id, date: dateStr, session, results });
-        }
-      });
-
-      const combined = [...draws];
-      let added = 0;
-      newDraws.forEach(nd => {
-        if (!combined.some(d => d.id === nd.id)) {
-          combined.push(nd);
-          added++;
-        }
-      });
-
-      combined.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      saveDraws(combined);
-      alert(`${added} sorteios importados com sucesso do Excel.`);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsBinaryString(file);
-  };
-
-  // --- MOTOR QUANTITATIVO (MIGRADO DO PYTHON) ---
-  const calculateRanking = (cutoffDate: Date) => {
-    const history = draws.filter(d => new Date(d.date) <= cutoffDate);
-    if (history.length === 0) return [];
-
-    const freq: Record<string, number> = {};
-    const recentScores: Record<string, number> = {};
-    const flatHistory = history.flatMap(d => d.results);
-    const n = flatHistory.length;
-
-    // Calcula frequência e peso temporal (EWMA)
-    flatHistory.forEach((milhar, index) => {
-      freq[milhar] = (freq[milhar] || 0) + 1;
-      
-      // Decaimento exponencial: valores recentes (próximos a n) valem mais
-      const weight = Math.exp(-5 + (5 * index) / (n > 1 ? n - 1 : 1));
-      recentScores[milhar] = (recentScores[milhar] || 0) + weight;
-    });
-
-    const calculated = [];
-    for (let i = 0; i <= 9999; i++) {
-      const milhar = String(i).padStart(4, '0');
-      const f_val = freq[milhar] || 0;
-      const r_val = recentScores[milhar] || 0;
-      
-      // Consenso: 30% Longo Prazo, 70% Curto Prazo
-      const score = (f_val * 0.3) + (r_val * 0.7);
-      if (score > 0) {
-        calculated.push({
-          milhar,
-          score,
-          freq_historica: f_val,
-          score_recente: r_val
-        });
-      }
-    }
-
-    return calculated.sort((a, b) => b.score - a.score).slice(0, 200);
-  };
-
-  const loadRanking = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const rank = calculateRanking(new Date());
-      setRanking(rank);
-      setLoading(false);
-    }, 100);
-  };
-
-  const runBacktest = () => {
-    setLoading(true);
-    setTimeout(() => {
-      if (draws.length < 10) {
-        alert("Necessário mais dados históricos para o backtest.");
-        setLoading(false);
-        return;
-      }
-
-      const results = [];
-      const testDraws = draws.slice(Math.floor(draws.length * 0.8)); // Testa nos últimos 20% dos dados
-
-      for (let i = 0; i < testDraws.length - 1; i++) {
-        const currentCutoff = new Date(testDraws[i].date);
-        const nextDraw = testDraws[i + 1];
-        
-        const rank = calculateRanking(currentCutoff);
-        const top10 = rank.slice(0, 10).map(r => r.milhar);
-        const actual = nextDraw.results;
-        
-        const hits = top10.filter(m => actual.includes(m)).length;
-        
-        results.push({
-          cutoff: currentCutoff.toLocaleDateString(),
-          target_date: new Date(nextDraw.date).toLocaleDateString(),
-          session: nextDraw.session,
-          hits,
-          baseline: 0.01
-        });
-      }
-
-      setBacktest(results);
-      setLoading(false);
-    }, 100);
-  };
-
-  // --- RENDERIZAÇÃO E LAYOUT INTACTO ---
-  return (
-    <div className="min-h-screen bg-gray-100 p-8 font-sans">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">LQIP - Quant Intelligence Platform</h1>
-        <p className="text-gray-600">Totalmente Client-Side (Sem Servidor)</p>
-        <p className="text-xs text-green-600 mt-1">Status: {draws.length} sorteios no banco local.</p>
-      </header>
-
-      <div className="flex gap-4 mb-6">
-        {['IMPORT', 'RANKING', 'BACKTEST'].map(tab => (
-          <button 
-            key={tab}
-            className={`px-6 py-2 rounded font-bold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </button>
-        ))}
-        <button 
-            className="px-6 py-2 rounded font-bold bg-red-500 text-white ml-auto"
-            onClick={() => {
-              if (window.confirm("Deseja apagar toda a base de dados do navegador?")) {
-                localStorage.removeItem('lqip_draws');
-                setDraws([]);
-              }
-            }}
-          >
-            LIMPAR DADOS
-          </button>
-      </div>
-
-      <main className="bg-white p-6 rounded shadow min-h-[500px]">
-        {loading && <div className="text-blue-600 font-bold mb-4">Processando lógica...</div>}
-
-        {activeTab === 'IMPORT' && (
-          <div className="grid grid-cols-2 gap-8">
-            <div className="border p-4 rounded bg-gray-50">
-              <h2 className="text-xl font-bold mb-4">📥 IMPORTAR EXCEL</h2>
-              <input type="file" accept=".xlsx" className="hidden" ref={fileInputRef} onChange={handleExcelImport} />
-              <button 
-                className="bg-green-600 text-white px-4 py-2 rounded w-full font-bold"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                SELECIONAR ARQUIVO .XLSX
-              </button>
-            </div>
-
-            <div className="border p-4 rounded bg-gray-50">
-              <h2 className="text-xl font-bold mb-4">📋 COLAR RESULTADOS</h2>
-              <textarea 
-                className="w-full h-48 p-2 border rounded font-mono text-sm"
-                value={pasteData}
-                onChange={(e) => setPasteData(e.target.value)}
-              />
-              <button 
-                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded w-full font-bold"
-                onClick={handlePasteImport}
-              >
-                PROCESSAR TEXTO
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'RANKING' && (
-          <div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded mb-4" onClick={loadRanking}>🔄 ATUALIZAR</button>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-2 border">Pos</th>
-                  <th className="p-2 border">Milhar</th>
-                  <th className="p-2 border">Score Final</th>
-                  <th className="p-2 border">Score Recente</th>
-                  <th className="p-2 border">Freq Histórica</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ranking.slice(0, 100).map((r: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-2 border font-bold">{idx + 1}º</td>
-                    <td className="p-2 border font-mono text-lg">{r.milhar}</td>
-                    <td className="p-2 border font-bold text-blue-600">{r.score.toFixed(4)}</td>
-                    <td className="p-2 border">{r.score_recente.toFixed(4)}</td>
-                    <td className="p-2 border">{r.freq_historica}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === 'BACKTEST' && (
-          <div>
-            <button className="bg-purple-600 text-white px-4 py-2 rounded mb-4" onClick={runBacktest}>▶ EXECUTAR SIMULAÇÃO</button>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-2 border">Cutoff Simulado</th>
-                  <th className="p-2 border">Alvo O-O-S</th>
-                  <th className="p-2 border">Sessão Alvo</th>
-                  <th className="p-2 border">Acertos no Top 10</th>
-                </tr>
-              </thead>
-              <tbody>
-                {backtest.map((b: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-2 border">{b.cutoff}</td>
-                    <td className="p-2 border font-bold text-gray-700">{b.target_date}</td>
-                    <td className="p-2 border">{b.session}</td>
-                    <td className="p-2 border font-bold text-green-600">{b.hits}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
+        // Inicializa o sistema na div "root"
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SistemaEstatistico />);
+    </script>
+</body>
+</html>
