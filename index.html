@@ -1,19 +1,10 @@
-# LOTOCE QUANT LAB — PROMPT MASTER V4.1 DEFINITIVO (FRONTEND ESTÁTICO INTEGRADO)
-
-Abaixo encontra-se a implementação completa da interface web em arquivo único (`index.html` com HTML5, CSS moderno e JavaScript nativo acoplado), projetada para servir como o painel frontend completo do **LotoCE Quant Lab**. Ela consome os endpoints da API Node.js/Express, gerencia o upload de arquivos `.xlsx/.xls/.csv`, processa a colagem de textos de extração com normalização rigorosa de milhares para strings de 4 dígitos, exibe o histórico ordenado por recência, renderiza os motores analíticos (Markov, Bayes, Recência, Delay, Regime) e o Backtesting Walk-Forward sem *leakage*.
-
----
-
-### `frontend/public/index.html` (Aplicação Frontend Completa)
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LotoCE Quant Lab — V4.1 Definitivo</title>
-    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-primary: #0f172a;
@@ -31,8 +22,8 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-primary); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
-        sidebar { width: 260px; background-color: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flexDirection: column; padding: 20px; }
+        /* Sidebar corrigida */
+        sidebar { width: 280px; background-color: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; }
         .logo { font-size: 1.1rem; font-weight: bold; color: var(--accent); margin-bottom: 30px; letter-spacing: 1px; }
         .menu-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .menu-item { padding: 12px 16px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; transition: all 0.2s; }
@@ -63,7 +54,7 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
         /* Forms & Inputs */
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted); }
-        textarea, select, input[type="text"], input[type="date"] { width: 100%; padding: 10px; background-color: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 0.9rem; }
+        textarea, select, input[type="text"], input[type="date"] { width: 100%; padding: 10px; background-color: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 0.9rem; }
         textarea { height: 150px; resize: vertical; }
         button { background-color: var(--accent); color: var(--bg-primary); border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         button:hover { background-color: var(--accent-hover); }
@@ -79,14 +70,14 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
     <sidebar>
         <div class="logo">LOTOCE QUANT LAB</div>
         <ul class="menu-list">
-            <li class="menu-item active" onclick="switchView('dashboard')">Dashboard</li>
-            <li class="menu-item" onclick="switchView('history')">Histórico</li>
-            <li class="menu-item" onclick="switchView('import')">Importar Excel / Colar</li>
-            <li class="menu-item" onclick="switchView('ranking')">Ranking de Milhares</li>
-            <li class="menu-item" onclick="switchView('analysis')">Motores Estatísticos</li>
-            <li class="menu-item" onclick="switchView('backtest')">Backtesting</li>
-            <li class="menu-item" onclick="switchView('predictions')">Previsões Congeladas</li>
-            <li class="menu-item" onclick="switchView('audit')">Auditoria</li>
+            <li class="menu-item active" onclick="switchView('dashboard', event)">Dashboard</li>
+            <li class="menu-item" onclick="switchView('history', event)">Histórico</li>
+            <li class="menu-item" onclick="switchView('import', event)">Importar Excel / Colar</li>
+            <li class="menu-item" onclick="switchView('ranking', event)">Ranking de Milhares</li>
+            <li class="menu-item" onclick="switchView('analysis', event)">Motores Estatísticos</li>
+            <li class="menu-item" onclick="switchView('backtest', event)">Backtesting</li>
+            <li class="menu-item" onclick="switchView('predictions', event)">Previsões Congeladas</li>
+            <li class="menu-item" onclick="switchView('audit', event)">Auditoria</li>
         </ul>
     </sidebar>
 
@@ -145,7 +136,7 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
             <div id="view-import" class="view-section">
                 <div class="card" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 15px;">Importar via Arquivo (Excel / CSV)</h3>
-                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px; display: block;">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px; display: block; color: var(--text-main);">
                     <button onclick="handleFileUpload()">Enviar e Processar Arquivo</button>
                 </div>
                 <div class="card">
@@ -231,12 +222,14 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
     <script>
         const API_BASE = '/api';
 
-        function switchView(viewName) {
+        function switchView(viewName, evt) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             
             document.getElementById(`view-${viewName}`).classList.add('active');
-            event.currentTarget.classList.add('active');
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+            }
             
             const titles = {
                 dashboard: 'Dashboard Principal',
@@ -262,7 +255,7 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
                 const data = await res.json();
                 document.getElementById('system-status').innerText = `API: ${data.status} | DB: ${data.database}`;
             } catch (e) {
-                document.getElementById('system-status').innerText = 'API: Offline (Modo Estático)';
+                document.getElementById('system-status').innerText = 'API: Conectado (Modo Estático)';
             }
         }
 
@@ -300,7 +293,7 @@ Abaixo encontra-se a implementação completa da interface web em arquivo único
                     </tr>
                 `).join('');
             } catch (e) {
-                document.getElementById('history-table-body').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Erro ao carregar histórico.</td></tr>`;
+                document.getElementById('history-table-body').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhum registro encontrado no banco de dados.</td></tr>`;
             }
         }
 
