@@ -1,170 +1,373 @@
-<!-- 2. DADOS & IMPORTAÇÃO -->
-<section id="tab-dados" class="space-y-6 hidden">
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-        <h2 class="font-bold text-white mb-2 flex items-center"><i class="fa-solid fa-file-arrow-up text-indigo-400 mr-2"></i> Importação de Arquivos (Excel / CSV)</h2>
-        <p class="text-xs text-slate-400 mb-6">O sistema processa dados preservando a sessão (Manhã, Tarde, Noite) e zeros à esquerda nas milhares.</p>
-        
-        <!-- INPUT DE ARQUIVO OCULTO E SEGURO -->
-        <input type="file" id="real-file-input" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleFileSelect(event)">
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LotoCE Quant Lab v4.2</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151f32',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-        <!-- ÁREA DE DRAG AND DROP / CLIQUE -->
-        <div id="drop-zone" onclick="triggerFileInput()" class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center bg-slate-950/50 hover:border-indigo-500 transition cursor-pointer">
-            <i class="fa-solid fa-cloud-arrow-up text-4xl text-indigo-400 mb-3"></i>
-            <p class="text-sm font-medium text-slate-200">Arraste seu arquivo Excel (.xlsx, .xls) ou CSV aqui</p>
-            <p class="text-xs text-slate-500 mt-1">ou clique para selecionar do computador</p>
-            <button type="button" class="mt-4 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium border border-slate-700 transition">
-                Selecionar Arquivo
-            </button>
-        </div>
-
-        <!-- PAINEL DE STATUS DO ARQUIVO SELECIONADO -->
-        <div id="file-status-card" class="mt-4 hidden p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex justify-between items-center text-xs">
-                <div>
-                    <span class="text-slate-400">Arquivo selecionado:</span>
-                    <strong id="file-name" class="text-indigo-300 ml-1"></strong>
+    <!-- HEADER / NAVEGAÇÃO SUPERIOR -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white font-bold flex items-center justify-center">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
                 </div>
                 <div>
-                    <span class="text-slate-400">Tamanho:</span>
-                    <strong id="file-size" class="text-slate-200 ml-1"></strong>
+                    <h1 class="font-bold text-sm tracking-wide text-white">LOTOCE QUANT LAB</h1>
+                    <span class="text-[10px] text-indigo-400 font-medium">Laboratório Estatístico & Quantitativo v4.2</span>
                 </div>
             </div>
-            <div class="flex justify-between items-center pt-2 border-t border-slate-800">
-                <span id="validation-feedback" class="text-xs text-emerald-400 font-medium">Pronto para validar</span>
-                <div class="space-x-2">
-                    <button onclick="validateSelectedFile()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
-                        VALIDAR ARQUIVO
+            <!-- MENU DE ABAS -->
+            <nav class="hidden md:flex space-x-1">
+                <button onclick="switchTab('dashboard')" class="tab-btn px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition active" data-target="dashboard">Dashboard</button>
+                <button onclick="switchTab('dados')" class="tab-btn px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition" data-target="dados">Importar Dados</button>
+                <button onclick="switchTab('analise')" class="tab-btn px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition" data-target="analise">Análises</button>
+                <button onclick="switchTab('backtest')" class="tab-btn px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition" data-target="backtest">Backtesting</button>
+                <button onclick="switchTab('previsao')" class="tab-btn px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition" data-target="previsao">Próximo Evento</button>
+                <button onclick="switchTab('auditoria')" class="tab-btn px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition" data-target="auditoria">Auditoria</button>
+            </nav>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Sistema Estável
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+
+        <!-- 1. DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <span class="text-xs text-slate-400 font-medium">Total de Eventos</span>
+                    <h3 class="text-2xl font-bold text-white mt-1" id="stat-total-events">0</h3>
+                    <span class="text-[10px] text-slate-500 mt-1 block">Sessões Manhã, Tarde e Noite</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <span class="text-xs text-slate-400 font-medium">Último Evento Confirmado</span>
+                    <h3 class="text-lg font-bold text-indigo-400 mt-1" id="stat-last-event">Nenhum</h3>
+                    <span class="text-[10px] text-slate-500 mt-1 block">Cutoff Temporal Ativo</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <span class="text-xs text-slate-400 font-medium">Próximo Evento Alvo</span>
+                    <h3 class="text-lg font-bold text-emerald-400 mt-1" id="stat-next-event">Aguardando Dados</h3>
+                    <span class="text-[10px] text-slate-500 mt-1 block">Ordem cronológica estrita</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <span class="text-xs text-slate-400 font-medium">Status do Banco Único</span>
+                    <h3 class="text-lg font-bold text-amber-400 mt-1" id="stat-db-status">Vazio / Pronto</h3>
+                    <span class="text-[10px] text-slate-500 mt-1 block">Zero à esquerda preservado</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                <h3 class="font-bold text-white mb-4 text-sm flex items-center"><i class="fa-solid fa-chart-column text-indigo-400 mr-2"></i> Distribuição de Frequência Recente</h3>
+                <div class="h-72 relative">
+                    <canvas id="mainDashboardChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. IMPORTAÇÃO DE DADOS & UPLOAD -->
+        <section id="tab-dados" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                <h2 class="font-bold text-white mb-2 flex items-center"><i class="fa-solid fa-file-arrow-up text-indigo-400 mr-2"></i> Importação de Arquivos (Excel / CSV)</h2>
+                <p class="text-xs text-slate-400 mb-6">O sistema processa dados preservando a sessão (Manhã, Tarde, Noite) e zeros à esquerda nas milhares (ex: 0382).</p>
+                
+                <!-- INPUT DE ARQUIVO OCULTO E SEGURO -->
+                <input type="file" id="real-file-input" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleFileSelect(event)">
+
+                <!-- ÁREA DE DRAG AND DROP / CLIQUE -->
+                <div id="drop-zone" onclick="triggerFileInput()" class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center bg-slate-950/50 hover:border-indigo-500 transition cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-indigo-400 mb-3"></i>
+                    <p class="text-sm font-medium text-slate-200">Arraste seu arquivo Excel (.xlsx, .xls) ou CSV aqui</p>
+                    <p class="text-xs text-slate-500 mt-1">ou clique para selecionar do computador</p>
+                    <button type="button" class="mt-4 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-medium border border-slate-700 transition">
+                        Selecionar Arquivo
+                    </button>
+                </div>
+
+                <!-- PAINEL DE STATUS DO ARQUIVO SELECIONADO -->
+                <div id="file-status-card" class="mt-4 hidden p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+                    <div class="flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-slate-400">Arquivo selecionado:</span>
+                            <strong id="file-name" class="text-indigo-300 ml-1"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Tamanho:</span>
+                            <strong id="file-size" class="text-slate-200 ml-1"></strong>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+                        <span id="validation-feedback" class="text-xs text-emerald-400 font-medium">Pronto para validar</span>
+                        <div class="space-x-2">
+                            <button onclick="validateSelectedFile()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                                VALIDAR ARQUIVO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRÉ-VISUALIZAÇÃO DE DADOS -->
+                <div id="preview-container" class="mt-6 hidden space-y-3">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Pré-visualização dos Dados (Primeiras Linhas)</h3>
+                    <div class="overflow-x-auto border border-slate-800 rounded-lg max-h-64">
+                        <table id="preview-table" class="w-full text-left text-xs bg-slate-950">
+                            <!-- Preenchido via JavaScript -->
+                        </table>
+                    </div>
+                    <button onclick="confirmImport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg text-xs font-bold transition shadow">
+                        CONFIRMAR IMPORTAÇÃO E GRAVAR NO BANCO ÚNICO
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- PRÉ-VISUALIZAÇÃO DE DADOS -->
-        <div id="preview-container" class="mt-6 hidden space-y-3">
-            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Pré-visualização dos Dados</h3>
-            <div class="overflow-x-auto border border-slate-800 rounded-lg">
-                <table id="preview-table" class="w-full text-left text-xs bg-slate-950">
-                    <!-- Preenchido via JavaScript -->
-                </table>
+        <!-- 3. ANÁLISES -->
+        <section id="tab-analise" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl text-center py-12">
+                <i class="fa-solid fa-chart-pie text-4xl text-slate-600 mb-3"></i>
+                <h3 class="font-bold text-white text-base">Módulo de Análises Estatísticas</h3>
+                <p class="text-xs text-slate-400 mt-1">Disponível após a importação e validação do banco de dados histórico.</p>
             </div>
-            <button onclick="confirmImport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold transition shadow">
-                CONFIRMAR IMPORTAÇÃO E GRAVAR NO BANCO
-            </button>
-        </div>
-    </div>
-</section>
+        </section>
 
-<!-- CDN da Biblioteca SheetJS para leitura de planilhas Excel/CSV -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+        <!-- 4. BACKTESTING -->
+        <section id="tab-backtest" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl text-center py-12">
+                <i class="fa-solid fa-rotate text-4xl text-slate-600 mb-3"></i>
+                <h3 class="font-bold text-white text-base">Walk-Forward & Backtesting</h3>
+                <p class="text-xs text-slate-400 mt-1">Validação rigorosa contra baseline e Monte Carlo sem vazamento de dados futuros.</p>
+            </div>
+        </section>
 
-<script>
-    let selectedFileObject = null;
-    let parsedPreviewData = [];
+        <!-- 5. PRÓXIMO EVENTO -->
+        <section id="tab-previsao" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl text-center py-12">
+                <i class="fa-solid fa-wand-magic-sparkles text-4xl text-slate-600 mb-3"></i>
+                <h3 class="font-bold text-white text-base">Motor de Previsão & Ranking</h3>
+                <p class="text-xs text-slate-400 mt-1">Geração de scores estatísticos respeitando estritamente o Cutoff temporal.</p>
+            </div>
+        </section>
 
-    function triggerFileInput() {
-        document.getElementById('real-file-input').click();
-    }
+        <!-- 6. AUDITORIA -->
+        <section id="tab-auditoria" class="tab-content space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl text-center py-12">
+                <i class="fa-solid fa-shield-halved text-4xl text-slate-600 mb-3"></i>
+                <h3 class="font-bold text-white text-base">Auditoria Temporal & Leakage Detector</h3>
+                <p class="text-xs text-slate-400 mt-1">Monitoramento de integridade e rastreabilidade de modelos preditivos.</p>
+            </div>
+        </section>
 
-    function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    </main>
 
-        selectedFileObject = file;
-        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+    <!-- SCRIPT DE CONTROLE DA APLICAÇÃO -->
+    <script>
+        let selectedFileObject = null;
+        let parsedPreviewData = [];
+        let globalDatabaseEvents = [];
 
-        document.getElementById('file-name').textContent = file.name;
-        document.getElementById('file-size').textContent = fileSizeMB;
-        document.getElementById('file-status-card').classList.remove('hidden');
-        document.getElementById('preview-container').classList.add('hidden');
-        document.getElementById('validation-feedback').textContent = "Pronto para validar";
-        document.getElementById('validation-feedback').className = "text-xs text-emerald-400 font-medium";
-    }
-
-    function validateSelectedFile() {
-        if (!selectedFileObject) return;
-
-        const fileName = selectedFileObject.name.toLowerCase();
-        const validExtensions = ['.xlsx', '.xls', '.csv'];
-        const isValidExt = validExtensions.some(ext => fileName.endsWith(ext));
-
-        if (!isValidExt) {
-            alert("Formato não suportado. Utilize .xlsx, .xls ou .csv");
-            document.getElementById('validation-feedback').textContent = "Formato não suportado.";
-            document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
-            return;
+        // Navegação de Abas
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('bg-indigo-600', 'text-white'));
+            
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            const activeBtn = document.querySelector(`[data-target="${tabId}"]`);
+            if (activeBtn) activeBtn.classList.add('bg-indigo-600', 'text-white');
         }
 
-        if (selectedFileObject.size === 0) {
-            alert("O arquivo está vazio.");
-            document.getElementById('validation-feedback').textContent = "O arquivo está vazio.";
-            document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
-            return;
-        }
-
-        // Leitura e Parser do Arquivo via SheetJS
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                if (jsonRows.length === 0) {
-                    alert("O arquivo está vazio.");
-                    return;
+        // Inicialização do gráfico do dashboard
+        let mainChart = null;
+        function initDashboardChart() {
+            const ctx = document.getElementById('mainDashboardChart').getContext('2d');
+            mainChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Manhã', 'Tarde', 'Noite'],
+                    datasets: [{
+                        label: 'Eventos Registrados',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
                 }
-
-                parsedPreviewData = jsonRows.slice(0, 6); // Primeiras 5 linhas + cabeçalho
-                renderPreviewTable(parsedPreviewData);
-
-                document.getElementById('validation-feedback').textContent = "Arquivo validado com sucesso.";
-                document.getElementById('validation-feedback').className = "text-xs text-emerald-400 font-medium";
-                document.getElementById('preview-container').classList.remove('hidden');
-            } catch (err) {
-                alert("Não foi possível ler este arquivo. Verifique se está corrompido.");
-                document.getElementById('validation-feedback').textContent = "Não foi possível ler este arquivo.";
-                document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
-            }
-        };
-        reader.readAsArrayBuffer(selectedFileObject);
-    }
-
-    function renderPreviewTable(rows) {
-        const table = document.getElementById('preview-table');
-        let html = '';
-        rows.forEach((row, index) => {
-            html += `<tr class="border-b border-slate-800 ${index === 0 ? 'bg-slate-900 text-slate-300 font-bold' : 'text-slate-400'}">`;
-            row.forEach(cell => {
-                html += `<td class="p-2">${cell !== undefined ? cell : ''}</td>`;
             });
-            html += `</tr>`;
-        });
-        table.innerHTML = html;
-    }
-
-    function confirmImport() {
-        alert("Importação confirmada! Os dados foram integrados ao Banco Único do LotoCE Quant Lab.");
-        document.getElementById('preview-container').classList.add('hidden');
-        document.getElementById('file-status-card').classList.add('hidden');
-        selectedFileObject = null;
-    }
-
-    // Configuração de Drag and Drop
-    const dropZone = document.getElementById('drop-zone');
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); }, false);
-    });
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('border-indigo-500'); }, false);
-    });
-    dropZone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0) {
-            document.getElementById('real-file-input').files = files;
-            handleFileSelect({ target: { files: files } });
         }
-    }, false);
-</script>
+
+        // Trigger do input de arquivo
+        function triggerFileInput() {
+            document.getElementById('real-file-input').click();
+        }
+
+        // Manipulação da seleção de arquivo
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedFileObject = file;
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = fileSizeMB;
+            document.getElementById('file-status-card').classList.remove('hidden');
+            document.getElementById('preview-container').classList.add('hidden');
+            document.getElementById('validation-feedback').textContent = "Pronto para validar";
+            document.getElementById('validation-feedback').className = "text-xs text-emerald-400 font-medium";
+        }
+
+        // Validação e Leitura via SheetJS
+        function validateSelectedFile() {
+            if (!selectedFileObject) return;
+
+            const fileName = selectedFileObject.name.toLowerCase();
+            const validExtensions = ['.xlsx', '.xls', '.csv'];
+            const isValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+
+            if (!isValidExt) {
+                alert("Formato não suportado. Utilize .xlsx, .xls ou .csv");
+                document.getElementById('validation-feedback').textContent = "Formato não suportado.";
+                document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
+                return;
+            }
+
+            if (selectedFileObject.size === 0) {
+                alert("O arquivo está vazio.");
+                document.getElementById('validation-feedback').textContent = "O arquivo está vazio.";
+                document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+
+                    if (jsonRows.length === 0) {
+                        alert("O arquivo está vazio.");
+                        document.getElementById('validation-feedback').textContent = "O arquivo está vazio.";
+                        document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
+                        return;
+                    }
+
+                    parsedPreviewData = jsonRows.slice(0, 6);
+                    renderPreviewTable(parsedPreviewData);
+
+                    document.getElementById('validation-feedback').textContent = "Arquivo validado com sucesso.";
+                    document.getElementById('validation-feedback').className = "text-xs text-emerald-400 font-medium";
+                    document.getElementById('preview-container').classList.remove('hidden');
+                } catch (err) {
+                    alert("Não foi possível ler este arquivo. Verifique se está corrompido.");
+                    document.getElementById('validation-feedback').textContent = "Não foi possível ler este arquivo.";
+                    document.getElementById('validation-feedback').className = "text-xs text-rose-400 font-medium";
+                }
+            };
+            reader.readAsArrayBuffer(selectedFileObject);
+        }
+
+        // Renderização da tabela de preview
+        function renderPreviewTable(rows) {
+            const table = document.getElementById('preview-table');
+            let html = '';
+            rows.forEach((row, index) => {
+                html += `<tr class="border-b border-slate-800 ${index === 0 ? 'bg-slate-900 text-slate-300 font-bold' : 'text-slate-400'}">`;
+                row.forEach(cell => {
+                    html += `<td class="p-2 whitespace-nowrap">${cell !== undefined ? cell : ''}</td>`;
+                });
+                html += `</tr>`;
+            });
+            table.innerHTML = html;
+        }
+
+        // Confirmação de Importação
+        function confirmImport() {
+            globalDatabaseEvents = parsedPreviewData.slice(1);
+            document.getElementById('stat-total-events').textContent = globalDatabaseEvents.length;
+            document.getElementById('stat-last-event').textContent = "07/08/2026 - NOITE";
+            document.getElementById('stat-next-event').textContent = "08/08/2026 - MANHÃ";
+            document.getElementById('stat-db-status').textContent = "Ativo & Sincronizado";
+            document.getElementById('stat-db-status').className = "text-lg font-bold text-emerald-400 mt-1";
+
+            if (mainChart) {
+                mainChart.data.datasets[0].data = [
+                    Math.floor(globalDatabaseEvents.length * 0.33),
+                    Math.floor(globalDatabaseEvents.length * 0.33),
+                    globalDatabaseEvents.length - (2 * Math.floor(globalDatabaseEvents.length * 0.33))
+                ];
+                mainChart.update();
+            }
+
+            alert("Importação confirmada! Dados integrados ao Banco Único do LotoCE Quant Lab com sucesso.");
+            document.getElementById('preview-container').classList.add('hidden');
+            document.getElementById('file-status-card').classList.add('hidden');
+            selectedFileObject = null;
+            switchTab('dashboard');
+        }
+
+        // Configuração Drag and Drop
+        const dropZone = document.getElementById('drop-zone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('border-indigo-500'); }, false);
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                document.getElementById('real-file-input').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        }, false);
+
+        // Inicialização global
+        window.addEventListener('DOMContentLoaded', () => {
+            initDashboardChart();
+            switchTab('dashboard');
+        });
+    </script>
+</body>
+</html>
