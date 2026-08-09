@@ -16,7 +16,7 @@
         <header class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-emerald-700">Lotoce - Laboratório Estatístico de Milhares</h1>
-                <p class="text-slate-500 text-sm mt-1">Análise Comportamental e Projeção de Milhares (0000 a 9999).</p>
+                <p class="text-slate-500 text-sm mt-1">Análise Comportamental, Score Estatístico e Projeção de Milhares (0000 a 9999).</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <button onclick="analisarHistorico()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
@@ -96,7 +96,7 @@
                         <span id="dashBacktesting" class="text-slate-600 block">-</span>
                     </div>
                     <div id="pesosAtuaisBadge" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg text-[11px] font-mono">
-                        Motor Estatístico de 4 Dígitos Ativo
+                        Score Estatístico de 10.000 Milhares Ativo
                     </div>
                 </div>
 
@@ -167,9 +167,9 @@
                 </div>
             </div>
             
-            <div id="containerJogos" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            <div id="containerJogos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">
-                    Clique em "Analisar Histórico" e depois em "Gerar Milhares" para extrair as projeções estatísticas.
+                    Clique em "Analisar Histórico" e depois em "Gerar Milhares" para extrair as projeções estatísticas baseadas no ranking completo.
                 </div>
             </div>
         </section>
@@ -193,6 +193,17 @@
         let historicoGlobal = [];
         let estatisticasGlobais = {};
         let milharesGeradas = [];
+        let rankingGlobal = [];
+
+        const PESOS_SCORE = {
+            frequenciaHistorica: 0.20,
+            frequenciaRecente: 0.25,
+            unidade: 0.10,
+            dezena: 0.15,
+            centena: 0.10,
+            recencia: 0.10,
+            tendencia: 0.10
+        };
 
         function parseLine(linha) {
             linha = linha.trim();
@@ -223,27 +234,154 @@
             return { historico };
         }
 
-        function processarEstatisticas(janelaSub) {
+        function processarEstatisticas(janelaSub, historicoCompleto) {
             let totalSorteios = janelaSub.length;
-            if (totalSorteios === 0) return null;
+            let totalHistorico = historicoCompleto.length;
+            if (totalHistorico === 0) return null;
 
-            let freqTerminacao = {};
+            let freqHistMap = {};
+            let freqRecMap = {};
+            let freqUnidade = {};
             let freqDezena = {};
-            for(let i=0; i<=9; i++) freqTerminacao[i] = 0;
+            let freqCentena = {};
+            let ultimaOcorrencia = {};
 
-            janelaSub.forEach(m => {
-                let term = parseInt(m.slice(-1), 10);
-                freqTerminacao[term]++;
-                let dez = m.slice(-2);
-                freqDezena[dez] = (freqDezena[dez] || 0) + 1;
+            for (let i = 0; i <= 9; i++) freqUnidade[i] = 0;
+            for (let i = 0; i <= 99; i++) freqDezena[i.toString().padStart(2, '0')] = 0;
+            for (let i = 0; i <= 999; i++) freqCentena[i.toString().padStart(3, '0')] = 0;
+            for (let i = 0; i < 10000; i++) {
+                let mStr = i.toString().padStart(4, '0');
+                freqHistMap[mStr] = 0;
+                freqRecMap[mStr] = 0;
+                ultimaOcorrencia[mStr] = -1;
+            }
+
+            // Mapeia histórico completo
+            historicoCompleto.forEach((m, idx) => {
+                freqHistMap[m] = (freqHistMap[m] || 0) + 1;
+                ultimaOcorrencia[m] = idx;
             });
 
+            // Mapeia janela recente
+            janelaSub.forEach(m => {
+                freqRecMap[m] = (freqRecMap[m] || 0) + 1;
+                let u = m.slice(-1);
+                let d = m.slice(-2);
+                let c = m.slice(-3);
+                freqUnidade[u]++;
+                freqDezena[d]++;
+                freqCentena[c]++;
+            });
+
+            // Calcula atrasos relativos ao fim do histórico completo
+            let atrasoAtual = {};
+            let atrasoMedioHistorico = {};
+            for (let i = 0; i < 10000; i++) {
+                let mStr = i.toString().padStart(4, '0');
+                let ultimoIdx = ultimaOcorrencia[mStr];
+                let atraso = ultimoIdx === -1 ? totalHistorico : totalHistorico - 1 - ultimoIdx;
+                atrasoAtual[mStr] = atraso;
+            }
+
+            // Normalizadores máximos para escala 0-100
+            let maxFreqHist = Math.max(...Object.values(freqHistMap), 1);
+            let maxFreqRec = Math.max(...Object.values(freqRecMap), 1);
+            let maxUnidade = Math.max(...Object.values(freqUnidade), 1);
+            let maxDezena = Math.max(...Object.values(freqDezena), 1);
+            let maxCentena = Math.max(...Object.values(freqCentena), 1);
+
+            let freqTerminacao = {};
+            for (let i = 0; i <= 9; i++) freqTerminacao[i] = freqUnidade[i];
+
             return {
-                totalConcursos: totalSorteios,
-                freqTerminacao,
+                totalConcursos: totalHistorico,
+                totalJanela: totalSorteios,
+                freqHistMap,
+                freqRecMap,
+                freqUnidade,
                 freqDezena,
-                ultimoSorteio: janelaSub[janelaSub.length - 1]
+                freqCentena,
+                freqTerminacao,
+                atrasoAtual,
+                maxFreqHist,
+                maxFreqRec,
+                maxUnidade,
+                maxDezena,
+                maxCentena,
+                ultimoSorteio: historicoCompleto[historicoCompleto.length - 1]
             };
+        }
+
+        function calcularScoreMilhares(est) {
+            let ranking = [];
+            let tamanhoJanela = est.totalJanela > 0 ? est.totalJanela : 1;
+            let tamanhoTotal = est.totalConcursos > 0 ? est.totalConcursos : 1;
+
+            for (let i = 0; i < 10000; i++) {
+                let mStr = i.toString().padStart(4, '0');
+                let u = mStr.slice(-1);
+                let d = mStr.slice(-2);
+                let c = mStr.slice(-3);
+
+                // Normalizações de 0 a 100
+                let valFH = (est.freqHistMap[mStr] / est.maxFreqHist) * 100;
+                let valFR = (est.freqRecMap[mStr] / est.maxFreqRec) * 100;
+                let valU = (est.freqUnidade[u] / est.maxUnidade) * 100;
+                let valD = (est.freqDezena[d] / est.maxDezena) * 100;
+                let valC = (est.freqCentena[c] / est.maxCentena) * 100;
+
+                // Recência estruturada (atraso moderado pontua bem, extremos penalizados suavemente)
+                let atraso = est.atrasoAtual[mStr];
+                let recScore = Math.max(0, 100 - (Math.abs(atraso - (tamanhoTotal / 10)) * 2));
+
+                // Tendência: proporção recente vs histórica
+                let taxaRecente = est.freqRecMap[mStr] / tamanhoJanela;
+                let taxa Historica = est.freqHistMap[mStr] / tamanhoTotal;
+                let tendenciaRatio = taxaHistorica > 0 ? taxaRecente / taxaHistorica : (taxaRecente > 0 ? 2 : 1);
+                let tendScore = Math.min(100, Math.max(0, tendenciaRatio * 50));
+
+                let scoreTotal = 
+                    (valFH * PESOS_SCORE.frequenciaHistorica) +
+                    (valFR * PESOS_SCORE.frequenciaRecente) +
+                    (valU  * PESOS_SCORE.unidade) +
+                    (valD  * PESOS_SCORE.dezena) +
+                    (valC  * PESOS_SCORE.centena) +
+                    (recScore * PESOS_SCORE.recencia) +
+                    (tendScore * PESOS_SCORE.tendencia);
+
+                // Descrição analítica dos motivos
+                let motivos = [];
+                if (taxaRecente > taxaHistorica) motivos.push("✓ frequência recente acima da média");
+                else motivos.push("• frequência recente estável");
+
+                if (valU > 70) motivos.push(`✓ unidade ${u} apresenta força relativa`);
+                if (valD > 70) motivos.push(`✓ dezena ${d} apresenta força relativa`);
+                if (tendenciaRatio > 1.1) motivos.push("✓ tendência positiva");
+                else if (tendenciaRatio < 0.9) motivos.push("⚠ tendência negativa");
+
+                if (atraso > (tamanhoTotal / 2)) motivos.push("⚠ atraso acima da média histórica");
+                else motivos.push("✓ recência equilibrada");
+
+                ranking.push({
+                    milhar: mStr,
+                    score: scoreTotal,
+                    componentes: {
+                        frequencia: Math.round(valFH),
+                        recencia: Math.round(recScore),
+                        unidade: Math.round(valU),
+                        dezena: Math.round(valD),
+                        centena: Math.round(valC),
+                        tendencia: Math.round(tendScore),
+                        atraso: atraso,
+                        taxaRecente: taxaRecente,
+                        taxaHistorica: taxaHistorica
+                    },
+                    motivos: motivos
+                });
+            }
+
+            ranking.sort((a, b) => b.score - a.score);
+            return ranking;
         }
 
         function analisarHistorico() {
@@ -251,19 +389,21 @@
             const janelaSelect = document.getElementById('selectJanela').value;
             const parsed = parseHistory(texto);
 
-            let hist = parsed.historico;
-            if (janelaSelect !== 'all') {
-                let qtd = parseInt(janelaSelect, 10);
-                hist = hist.slice(-qtd);
-            }
-
-            historicoGlobal = hist;
-            estatisticasGlobais = processarEstatisticas(hist);
-
-            if (!estatisticasGlobais) {
+            let histCompleto = parsed.historico;
+            if (histCompleto.length === 0) {
                 alert('Insira dados válidos contendo milhares de 4 dígitos.');
                 return;
             }
+
+            let histJanela = histCompleto;
+            if (janelaSelect !== 'all') {
+                let qtd = parseInt(janelaSelect, 10);
+                histJanela = histCompleto.slice(-qtd);
+            }
+
+            historicoGlobal = histCompleto;
+            estatisticasGlobais = processarEstatisticas(histJanela, histCompleto);
+            rankingGlobal = calcularScoreMilhares(estatisticasGlobais);
 
             renderizarDashboard();
             renderizarTerminacoes();
@@ -273,7 +413,7 @@
 
         function renderizarDashboard() {
             let est = estatisticasGlobais;
-            document.getElementById('dashCenario').innerHTML = `Status: Ativo<br>Amostras analisadas: ${est.totalConcursos} milhares`;
+            document.getElementById('dashCenario').innerHTML = `Status: Ativo<br>Amostras analisadas: ${est.totalConcursos} milhares (Janela: ${est.totalJanela})`;
             
             let melhorDezena = Object.entries(est.freqDezena).sort((a,b)=>b[1]-a[1])[0];
             document.getElementById('dashPesos').innerHTML = `Dezena mais recorrente: <b>${melhorDezena ? melhorDezena[0] : '-'}</b> (${melhorDezena ? melhorDezena[1] : 0}x)`;
@@ -287,7 +427,7 @@
 
             for (let i = 0; i <= 9; i++) {
                 let qtd = est.freqTerminacao[i];
-                let perc = ((qtd / est.totalConcursos) * 100).toFixed(0);
+                let perc = est.totalJanela > 0 ? ((qtd / est.totalJanela) * 100).toFixed(0) : 0;
                 mapaDiv.innerHTML += `
                     <div class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-center">
                         <span class="block font-bold text-xs text-slate-700">Term. ${i}</span>
@@ -303,67 +443,90 @@
             document.getElementById('painelInteligente').innerHTML = `
                 <div class="p-3 bg-white border border-slate-200 rounded-lg">Amostras Válidas: <b>${est.totalConcursos}</b></div>
                 <div class="p-3 bg-white border border-slate-200 rounded-lg">Padrão de Dígitos: <b>4 Dígitos (0000-9999)</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor Analítico: <b>Cruzamento de Terminações e Dezenas</b></div>
+                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor Analítico: <b>Score Estatístico Determinístico V1</b></div>
             `;
         }
 
         function renderizarDiagnosticoIA() {
-            let est = estatisticasGlobais;
-            // Sugere baseada nas últimas ocorrências combinadas
-            let baseSugerida = est.ultimoSorteio ? est.ultimoSorteio.slice(0,2) : "48";
-            let termTop = Object.entries(est.freqTerminacao).sort((a,b)=>b[1]-a[1])[0][0];
-            let milharSugerida = baseSugerida + "1" + termTop;
+            if (!rankingGlobal || rankingGlobal.length === 0) return;
+            let top1 = rankingGlobal[0];
+            let top2Term = Object.entries(estatisticasGlobais.freqTerminacao).sort((a,b)=>b[1]-a[1])[0][0];
 
-            document.getElementById('iaMelhor1').textContent = milharSugerida;
-            document.getElementById('iaPrec1').textContent = `Baseada na raiz (${baseSugerida}) e terminação forte (${termTop})`;
-            document.getElementById('iaMelhor2').textContent = `Final .${termTop}`;
-            document.getElementById('iaPrec2').textContent = `Alta recorrência recente`;
-            document.getElementById('iaConfiancaGeral').textContent = `89%`;
-            document.getElementById('iaHibridoMix').textContent = `Padrão Coerente`;
+            document.getElementById('iaMelhor1').textContent = top1.milhar;
+            document.getElementById('iaPrec1').textContent = `Score: ${top1.score.toFixed(2)} | Freq: ${top1.componentes.frequencia} | Recência: ${top1.componentes.recencia}`;
+            document.getElementById('iaMelhor2').textContent = `Final .${top2Term}`;
+            document.getElementById('iaPrec2').textContent = `Terminação mais recorrente`;
+            document.getElementById('iaConfiancaGeral').textContent = `Coerência estatística: ${Math.round(top1.score)}/100`;
+            document.getElementById('iaHibridoMix').textContent = `Ranking 100% Determinístico`;
 
-            document.getElementById('listaMotivos').innerHTML = `
-                <div>✔ Varredura de terminações cruzada com histórico recente</div>
-                <div>✔ Eliminação de repetições cegas e aplicação de peso posicional</div>
-            `;
+            let motivosHtml = top1.motivos.slice(0, 4).map(m => `<div>${m}</div>`).join('');
+            document.getElementById('listaMotivos').innerHTML = motivosHtml;
         }
 
         function gerarMilhares() {
-            if (!estatisticasGlobais || !estatisticasGlobais.totalConcursos) {
+            if (!rankingGlobal || rankingGlobal.length === 0) {
                 analisarHistorico();
             }
             let qtdDesejada = parseInt(document.getElementById('selectQtdJogos').value, 10) || 5;
-            let est = estatisticasGlobais;
+            
+            // Diversificação controlada mantendo qualidade do ranking
+            let selecionadas = [];
+            let terminaçõesUsadas = new Set();
+            let centenasUsadas = new Set();
 
-            // Coleta terminações e dezenas que mais saíram para orientar a criação inteligente
-            let termosValidos = Object.keys(est.freqTerminacao);
-            let gerados = new Set();
+            for (let item of rankingGlobal) {
+                if (selecionadas.length >= qtdDesejada) break;
+                let term = item.milhar.slice(-1);
+                let cent = item.milhar.slice(-3);
 
-            // Gera com base estatística inteligente simulando varredura de padrões
-            while(gerados.size < qtdDesejada && gerados.size < 100) {
-                let milharAleatoria = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-                // Dá preferência estatística a milhares cujas terminações alinham com o histórico
-                let term = parseInt(milharAleatoria.slice(-1), 10);
-                if (est.freqTerminacao[term] > 0 || Math.random() > 0.3) {
-                    gerados.add(milharAleatoria);
+                // Se ainda precisamos preencher, garantimos diversidade de terminação e centena se possível
+                if (!terminaçõesUsadas.has(term) || !centenasUsadas.has(cent) || selecionadas.length < (qtdDesejada / 2)) {
+                    selecionadas.push(item);
+                    terminaçõesUsadas.add(term);
+                    centenasUsadas.add(cent);
                 }
             }
 
-            milharesGeradas = Array.from(gerados);
+            // Se faltou preencher por restrição estrita, completa com os melhores do topo do ranking
+            if (selecionadas.length < qtdDesejada) {
+                for (let item of rankingGlobal) {
+                    if (selecionadas.length >= qtdDesejada) break;
+                    if (!selecionadas.includes(item)) {
+                        selecionadas.push(item);
+                    }
+                }
+            }
+
+            milharesGeradas = selecionadas;
 
             let container = document.getElementById('containerJogos');
             container.innerHTML = '';
 
-            milharesGeradas.forEach((milhar, idx) => {
+            milharesGeradas.forEach((item, idx) => {
+                let motivosHtml = item.motivos.map(m => `<span class="block text-[10px] text-slate-500">${m}</span>`).join('');
                 container.innerHTML += `
-                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center space-y-1 shadow-sm">
-                        <span class="text-[10px] text-emerald-600 font-semibold block">Projeção 0${idx + 1}</span>
-                        <div class="text-2xl font-extrabold text-slate-800 font-mono tracking-wider">${milhar}</div>
-                        <span class="text-[10px] text-slate-400 block">Term. ${milhar.slice(-1)} | Dez. ${milhar.slice(-2)}</span>
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-emerald-600 font-semibold">Projeção 0${idx + 1}</span>
+                            <span class="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Score: ${item.score.toFixed(1)}</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-slate-800 font-mono tracking-wider text-center">${item.milhar}</div>
+                        <div class="grid grid-cols-3 gap-1 text-[10px] text-slate-600 font-mono bg-white p-2 rounded border border-slate-200 text-center">
+                            <div>Freq: <b>${item.componentes.frequencia}</b></div>
+                            <div>Rec: <b>${item.componentes.recencia}</b></div>
+                            <div>Tend: <b>${item.componentes.tendencia}</b></div>
+                            <div>Unid: <b>${item.componentes.unidade}</b></div>
+                            <div>Dez: <b>${item.componentes.dezena}</b></div>
+                            <div>Cent: <b>${item.componentes.centena}</b></div>
+                        </div>
+                        <div class="space-y-0.5 pt-1 border-t border-slate-200">
+                            ${motivosHtml}
+                        </div>
                     </div>
                 `;
             });
 
-            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares projetadas com base no laboratório.`;
+            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares projetadas com base no ranking estatístico.`;
         }
 
         function gerarNovamente() {
@@ -371,7 +534,68 @@
         }
 
         function executarModoCientifico() {
-            alert('Modo Científico (Backtest) executado com sucesso sobre a base de milhares.');
+            if (historicoGlobal.length < 20) {
+                alert('Histórico insuficiente para backtest robusto (mínimo de 20 registros recomendados).');
+                return;
+            }
+
+            let qtdMilharesSel = parseInt(document.getElementById('selectQtdJogos').value, 10) || 5;
+            let testesRealizados = 0;
+            let acertosExatos = 0;
+            let acertosDezena = 0;
+            let acertosUnidade = 0;
+            let acertosCentena = 0;
+
+            // Walk-forward simples a partir do sorteio 15
+            let inicioCutoff = Math.max(10, historicoGlobal.length - 50); // testa os últimos até 50 sorteios
+            for (let i = inicioCutoff; i < historicoGlobal.length; i++) {
+                let subHistorico = historicoGlobal.slice(0, i);
+                let proximoReal = historicoGlobal[i];
+
+                let estSub = processarEstatisticas(subHistorico.slice(-20), subHistorico);
+                let rankingSub = calcularScoreMilhares(estSub);
+
+                // Seleciona top N
+                let topN = rankingSub.slice(0, qtdMilharesSel);
+                let milharesTopN = topN.map(t => t.milhar);
+
+                testesRealizados++;
+                if (milharesTopN.includes(proximoReal)) {
+                    acertosExatos++;
+                }
+
+                // Verifica partes
+                let realU = proximoReal.slice(-1);
+                let realD = proximoReal.slice(-2);
+                let realC = proximoReal.slice(-3);
+
+                let achouU = topN.some(t => t.milhar.slice(-1) === realU);
+                let achouD = topN.some(t => t.milhar.slice(-2) === realD);
+                let achouC = topN.some(t => t.milhar.slice(-3) === realC);
+
+                if (achouUnidade = achouU) acertosUnidade++;
+                if (achouDezena = achouD) acertosDezena++;
+                if (achouCentena = achouC) acertosCentena++;
+            }
+
+            let baselineProb = (qtdMilharesSel / 10000) * testesRealizados;
+            let diffExata = acertosExatos - baselineProb;
+            
+            let statusSinal = "INCONCLUSIVO";
+            if (acertosExatos > baselineProb * 1.5 && testesRealizados >= 10) {
+                statusSinal = "SINAL POSITIVO";
+            } else if (acertosExatos === 0 && testesRealizados >= 20) {
+                statusSinal = "SEM EVIDÊNCIA";
+            }
+
+            document.getElementById('dashBacktesting').innerHTML = `
+                <b>Backtest Walk-Forward Concluído:</b><br>
+                Testes: ${testesRealizados} | Acertos Exatos: <b>${acertosExatos}</b> (Baseline teórica: ${baselineProb.toFixed(1)})<br>
+                Parciais -> Unidade: ${acertosUnidade} | Dezena: ${acertosDezena} | Centena: ${acertosCentena}<br>
+                Classificação: <span class="font-bold text-emerald-700">${statusSinal}</span>
+            `;
+
+            alert(`Backtest executado com sucesso!\nTestes: ${testesRealizados}\nAcertos Exatos: ${acertosExatos}\nClassificação: ${statusSinal}`);
         }
 
         function conferirMilhares() {
@@ -384,8 +608,12 @@
                 alert('Gere as milhares primeiro antes de conferir.');
                 return;
             }
-            let acertou = milharesGeradas.includes(val);
-            alert(acertou ? `Parabéns! A milhar ${val} estava entre as projeções recomendadas!` : `A milhar ${val} não estava no grupo projetado desta vez.`);
+            let itemEncontrado = milharesGeradas.find(s => s.milhar === val);
+            if (itemEncontrado) {
+                alert(`Parabéns! A milhar ${val} estava entre as projeções recomendadas (Score: ${itemEncontrado.score.toFixed(1)})!`);
+            } else {
+                alert(`A milhar ${val} não estava no grupo projetado desta vez.`);
+            }
         }
 
         function exportarJogosTXT() {
@@ -393,7 +621,7 @@
                 alert('Nenhuma milhar gerada para exportar.');
                 return;
             }
-            let texto = "--- MILHARES PROJETADAS LOTOCE ---\n" + milharesGeradas.map((m, i) => `Projeção ${i+1}: ${m}`).join('\n');
+            let texto = "--- MILHARES PROJETADAS LOTOCE (SCORE V1) ---\n" + milharesGeradas.map((m, i) => `Projeção ${i+1}: ${m.milhar} (Score: ${m.score.toFixed(1)})`).join('\n');
             let blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
             let link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -413,6 +641,7 @@
             document.getElementById('dashCenario').textContent = '-';
             document.getElementById('dashPesos').textContent = '-';
             document.getElementById('dashBacktesting').textContent = '-';
+            rankingGlobal = [];
         }
 
         window.onload = function() {
