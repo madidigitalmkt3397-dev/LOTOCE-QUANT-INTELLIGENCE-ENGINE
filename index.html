@@ -2,183 +2,61 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laboratório Estatístico - Lotoce</title>
-    <!-- Tailwind CSS para um design limpo e moderno -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS para leitura de arquivos Excel no Front-End -->
+    <!-- SheetJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
+<body class="bg-slate-950 text-white min-h-screen p-8">
 
-    <div class="max-w-4xl mx-auto space-y-6">
-        <!-- Cabeçalho -->
-        <header class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
-            <h1 class="text-2xl md:text-3xl font-bold text-emerald-400 mb-2">🎲 Laboratório Estatístico - Lotoce</h1>
-            <p class="text-slate-400 text-sm md:text-base">
-                Carregue sua planilha com os resultados (Manhã, Tarde, Tarde II e Noite) para analisar padrões históricos e gerar 5 opções estudadas de milhares (1 a 10).
-            </p>
-        </header>
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-emerald-500 mb-6">Laboratório Estatístico Lotoce</h1>
+        
+        <div class="bg-slate-900 p-6 rounded-lg border border-slate-700">
+            <input type="file" id="excelFile" class="mb-4 block w-full text-slate-300">
+            <button onclick="iniciarAnalise()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded">
+                Processar e Analisar
+            </button>
+            <p id="msg" class="mt-4 text-sm"></p>
+        </div>
 
-        <!-- Seção de Upload -->
-        <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl space-y-4">
-            <label class="block text-sm font-semibold text-slate-300">Carregar Histórico (Excel / CSV)</label>
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" 
-                    class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-slate-950 hover:file:bg-emerald-400 cursor-pointer">
-                <button onclick="processarPlanilha()" 
-                    class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2 rounded-lg transition-all shadow-lg">
-                    Analisar Dados
-                </button>
-            </div>
-            <p id="statusMsg" class="text-xs text-slate-400">Nenhum arquivo carregado.</p>
-        </section>
-
-        <!-- Resultados e Recomendações -->
-        <section id="resultSection" class="hidden space-y-6">
-            <!-- Estatísticas Básicas -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg">
-                    <span class="text-xs text-slate-400 uppercase tracking-wider">Total de Sorteios</span>
-                    <p id="statTotal" class="text-2xl font-bold text-emerald-400">0</p>
-                </div>
-                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg">
-                    <span class="text-xs text-slate-400 uppercase tracking-wider">Milhar Mais Frequente</span>
-                    <p id="statFrequent" class="text-2xl font-bold text-emerald-400">-</p>
-                </div>
-                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg">
-                    <span class="text-xs text-slate-400 uppercase tracking-wider">Milhar Mais Atrasada</span>
-                    <p id="statDelayed" class="text-2xl font-bold text-emerald-400">-</p>
-                </div>
-            </div>
-
-            <!-- As 5 Milhares Recomendadas -->
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl space-y-4">
-                <h2 class="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-3">🎯 Top 5 Milhares Recomendadas (Estudo Estatístico)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4" id="recommendationsGrid">
-                    <!-- Preenchido via JavaScript -->
-                </div>
-            </div>
-        </section>
+        <div id="res" class="mt-8 grid grid-cols-1 md:grid-cols-5 gap-4"></div>
     </div>
 
     <script>
-        let dadosHistoricos = [];
-
-        function processarPlanilha() {
+        function iniciarAnalise() {
+            const msg = document.getElementById('msg');
             const fileInput = document.getElementById('excelFile');
-            const statusMsg = document.getElementById('statusMsg');
-
+            
             if (!fileInput.files.length) {
-                alert('Por favor, selecione um arquivo Excel ou CSV.');
+                alert('Selecione o arquivo primeiro.');
                 return;
             }
 
-            const file = fileInput.files[0];
             const reader = new FileReader();
-
-            reader.onload = function (e) {
+            reader.onload = function(e) {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    const workbook = XLSX.read(e.target.result, {type: 'array'});
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                     
-                    // Pega a primeira planilha do arquivo
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
+                    console.log("Dados lidos:", json); // VEJA ISSO NO CONSOLE
+                    msg.innerText = "Arquivo lido com sucesso! Processando...";
                     
-                    // Converte para JSON
-                    const json = XLSX.utils.sheet_to_json(worksheet);
-
-                    if (json.length === 0) {
-                        statusMsg.textContent = "A planilha parece estar vazia.";
-                        return;
-                    }
-
-                    dadosHistoricos = json;
-                    statusMsg.textContent = `Sucesso! ${json.length} registros carregados.`;
-                    
-                    analisarEGerarRecomendacoes();
-                    document.getElementById('resultSection').classList.remove('hidden');
-
-                } catch (error) {
-                    console.error(error);
-                    statusMsg.textContent = "Erro ao processar o arquivo. Verifique o formato.";
+                    // Lógica de cálculo aqui
+                    renderizarResultados(json);
+                } catch (err) {
+                    msg.innerText = "Erro: " + err.message;
+                    console.error(err);
                 }
             };
-
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(fileInput.files[0]);
         }
 
-        function analisarEGerarRecomendacoes() {
-            // Supondo que a coluna com o número da milhar se chame algo como 'milhar', 'numero', 'resultado' ou seja a 2ª/3ª coluna.
-            // Vamos tentar varrer as chaves para achar valores numéricos de 1 a 10 ou dados de milhar.
-            const frequencias = {};
-            const ultimaOcorrencia = {};
-            
-            // Inicializa contadores de 1 a 10
-            for (let i = 1; i <= 10; i++) {
-                frequencias[i] = 0;
-                ultimaOcorrencia[i] = 999999; // Índice de atraso
-            }
-
-            let totalSorteios = dadosHistoricos.length;
-
-            dadosHistoricos.forEach((row, index) => {
-                // Tenta extrair o valor da milhar procurando em todas as chaves da linha por valores entre 1 e 10
-                Object.values(row).forEach(val => {
-                    const num = parseInt(val);
-                    if (num >= 1 && num <= 10) {
-                        frequencias[num] = (frequencias[num] || 0) + 1;
-                        // Guarda a distância do fim (atraso)
-                        const atraso = totalSorteios - 1 - index;
-                        if (atraso < (ultimaOcorrencia[num] || 999999)) {
-                            ultimaOcorrencia[num] = atraso;
-                        }
-                    }
-                });
-            });
-
-            // Identificar mais frequente e mais atrasada
-            let maisFreq = 1;
-            let maisAtrasada = 1;
-
-            for (let i = 2; i <= 10; i++) {
-                if (frequencias[i] > frequencias[maisFreq]) maisFreq = i;
-                if (ultimaOcorrencia[i] > ultimaOcorrencia[maisAtrasada]) maisAtrasada = i;
-            }
-
-            // Atualiza UI Estatísticas
-            document.getElementById('statTotal').textContent = totalSorteios;
-            document.getElementById('statFrequent').textContent = `Milhar ${maisFreq} (${frequencias[maisFreq]}x)`;
-            document.getElementById('statDelayed').textContent = `Milhar ${maisAtrasada} (${ultimaOcorrencia[maisAtrasada]} sorteios atrás)`;
-
-            // Lógica para gerar 5 opções estudadas (mix de frequência + equilíbrio de atraso)
-            // Criamos um score combinando frequência e atraso
-            let scored = [];
-            for (let i = 1; i <= 10; i++) {
-                let score = (frequencias[i] * 1.0) + (ultimaOcorrencia[i] * 0.5);
-                scored.push({ milhar: i, score: score, freq: frequencias[i], atraso: ultimaOcorrencia[i] });
-            }
-
-            // Ordena pelo score decrescente
-            scored.sort((a, b) => b.score - a.score);
-
-            // Pega as top 5
-            const top5 = scored.slice(0, 5);
-
-            // Renderiza na tela
-            const grid = document.getElementById('recommendationsGrid');
-            grid.innerHTML = '';
-
-            top5.forEach((item, idx) => {
-                grid.innerHTML += `
-                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center space-y-2 shadow">
-                        <span class="text-xs text-emerald-400 font-semibold">Opção 0${idx + 1}</span>
-                        <div class="text-3xl font-extrabold text-white">Milhar ${item.milhar}</div>
-                        <div class="text-xs text-slate-400">Freq: ${item.freq} | Atraso: ${item.atraso} concursos</div>
-                    </div>
-                `;
-            });
+        function renderizarResultados(dados) {
+            const resDiv = document.getElementById('res');
+            resDiv.innerHTML = '<p>Análise concluída. (Simulação de 5 números)</p>';
+            // Adicione aqui sua lógica de exibir os 5 números
         }
     </script>
 </body>
