@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotoce - Laboratório Estatístico de Milhares (0000 a 9999)</title>
+    <title>Lotoce - Laboratório Estatístico de Milhares (0000 a 9999) - Evolução V2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -15,18 +15,18 @@
         <!-- Cabeçalho -->
         <header class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-emerald-700">Lotoce - Laboratório Estatístico de Milhares</h1>
-                <p class="text-slate-500 text-sm mt-1">Análise Comportamental, Score Estatístico e Projeção de Milhares (0000 a 9999).</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-emerald-700">Lotoce - Laboratório Estatístico V2</h1>
+                <p class="text-slate-500 text-sm mt-1">Diagnóstico de Posições, Features Estruturais e Backtest Walk-Forward (0000 a 9999).</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <button onclick="analisarHistorico()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
                     Analisar Histórico
                 </button>
                 <button onclick="gerarMilhares()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
-                    Gerar Milhares (Modo Elite)
+                    Gerar Milhares (Modo V2)
                 </button>
                 <button onclick="executarModoCientifico()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
-                    Modo Científico (Backtest)
+                    Modo Científico (Backtest V2)
                 </button>
                 <button onclick="gerarNovamente()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
                     Gerar Novamente
@@ -75,35 +75,35 @@
                 </div>
             </div>
 
-            <!-- Dashboard de Estatísticas e Rankings -->
+            <!-- Dashboard de Estatísticas e Rankings V2 -->
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 lg:col-span-2">
-                <h2 class="text-lg font-semibold text-slate-800">Dashboard Estatístico & Comportamental</h2>
+                <h2 class="text-lg font-semibold text-slate-800">Dashboard de Diagnóstico do Ranking (V2)</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                        <span class="font-semibold text-emerald-700 block text-sm">Classificador de Cenário Atual:</span>
-                        <span id="dashCenario" class="text-slate-700 block font-mono leading-relaxed max-h-24 overflow-y-auto">-</span>
+                        <span class="font-semibold text-emerald-700 block text-sm">Diagnóstico de Posição Real:</span>
+                        <span id="dashCenario" class="text-slate-700 block font-mono leading-relaxed max-h-28 overflow-y-auto">Aguardando execução do backtest...</span>
                     </div>
                     <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                        <span class="font-semibold text-slate-700 block text-sm">Tendência de Terminações (Centenas/Dezenas):</span>
-                        <span id="dashPesos" class="text-slate-600 block font-mono leading-relaxed max-h-24 overflow-y-auto">-</span>
+                        <span class="font-semibold text-slate-700 block text-sm">Validação de Componentes & Baseline:</span>
+                        <span id="dashPesos" class="text-slate-600 block font-mono leading-relaxed max-h-28 overflow-y-auto">Aguardando avaliação comparativa...</span>
                     </div>
                 </div>
 
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                     <div>
-                        <span class="font-semibold text-slate-700 block mb-0.5">Relatório do Laboratório Científico:</span>
+                        <span class="font-semibold text-slate-700 block mb-0.5">Relatório do Laboratório Científico V2:</span>
                         <span id="dashBacktesting" class="text-slate-600 block">-</span>
                     </div>
-                    <div id="pesosAtuaisBadge" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg text-[11px] font-mono">
-                        Score Estatístico de 10.000 Milhares Ativo
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg text-[11px] font-mono">
+                        Motor V2 com Features Posicionais e Estruturais Ativo
                     </div>
                 </div>
 
-                <!-- Painel de Terminações Frequentes -->
+                <!-- Painel de Posições Posicionais -->
                 <div>
-                    <span class="text-xs font-semibold text-slate-700 block mb-2">Terminações (Unidades 0 a 9) Mais Ativas no Histórico:</span>
-                    <div id="mapaCalor" class="grid grid-cols-5 md:grid-cols-10 gap-1.5">
+                    <span class="text-xs font-semibold text-slate-700 block mb-2">Comportamento Posicional por Dígito (0 a 9):</span>
+                    <div id="mapaCalor" class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
                         <!-- Preenchido via JS -->
                     </div>
                 </div>
@@ -113,7 +113,7 @@
         <!-- Módulo de Recomendação Automática do Especialista -->
         <section id="secaoDiagnosticoIA" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                🤖 Especialista IA & Padrões Identificados
+                🤖 Especialista IA & Decomposição do Score V2
             </h2>
             <div id="painelDiagnosticoIA" class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
                 <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1 md:col-span-2">
@@ -122,18 +122,18 @@
                     <span id="iaPrec1" class="text-emerald-700 block">-</span>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
-                    <span class="text-slate-500 font-medium block">Terminação Dominante</span>
+                    <span class="text-slate-500 font-medium block">Estrutura Dominante</span>
                     <span id="iaMelhor2" class="font-bold text-slate-800 text-sm font-mono block">-</span>
                     <span id="iaPrec2" class="text-emerald-700 block">-</span>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
-                    <span class="text-slate-500 font-medium block">Nível de Coerência</span>
+                    <span class="text-slate-500 font-medium block">Status do Modelo</span>
                     <span id="iaConfiancaGeral" class="font-bold text-slate-900 text-sm block">-</span>
                     <span id="iaHibridoMix" class="text-emerald-700 block">-</span>
                 </div>
             </div>
             <div id="motivosRecomendacao" class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs space-y-1 font-mono">
-                <span class="font-bold text-slate-700 block">Critérios do Estudo:</span>
+                <span class="font-bold text-slate-700 block">Decomposição Detalhada do Score:</span>
                 <div id="listaMotivos" class="text-slate-600">-</div>
             </div>
         </section>
@@ -141,13 +141,13 @@
         <!-- Seção do Laboratório Estatístico -->
         <section id="secaoLaboratorioEstatistico" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
             <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                🔬 Laboratório de Dezenas e Centenas
+                🔬 Laboratório de Features Estruturais e Posicionais
             </h2>
             
             <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl space-y-3">
-                <h3 class="text-sm font-bold text-emerald-700">Resumo Estrutural do Histórico</h3>
+                <h3 class="text-sm font-bold text-emerald-700">Resumo Estrutural do Histórico (Paridade, Soma, Sequências)</h3>
                 <div id="painelInteligente" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-700">
-                    <div>Carregando padrões...</div>
+                    <div>Carregando padrões estruturais...</div>
                 </div>
             </div>
         </section>
@@ -156,7 +156,7 @@
         <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-800">Milhares Recomendadas pelo Estudo</h2>
+                    <h2 class="text-lg font-semibold text-slate-800">Milhares Recomendadas pelo Estudo V2</h2>
                     <span id="statusGeracao" class="text-xs text-slate-500">Nenhuma milhar gerada</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
@@ -169,7 +169,7 @@
             
             <div id="containerJogos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">
-                    Clique em "Analisar Histórico" e depois em "Gerar Milhares" para extrair as projeções estatísticas baseadas no ranking completo.
+                    Clique em "Analisar Histórico" e depois em "Gerar Milhares" para extrair as projeções estatísticas V2 baseadas no ranking completo.
                 </div>
             </div>
         </section>
@@ -195,14 +195,17 @@
         let milharesGeradas = [];
         let rankingGlobal = [];
 
+        // Pesos otimizados V2 (incorporando posicional e estrutural com pesos equilibrados)
         const PESOS_SCORE = {
-            frequenciaHistorica: 0.20,
-            frequenciaRecente: 0.25,
-            unidade: 0.10,
-            dezena: 0.15,
-            centena: 0.10,
+            frequenciaHistorica: 0.15,
+            frequenciaRecente: 0.20,
+            unidade: 0.08,
+            dezena: 0.12,
+            centena: 0.08,
             recencia: 0.10,
-            tendencia: 0.10
+            tendencia: 0.07,
+            posicional: 0.10,
+            estrutural: 0.10
         };
 
         function parseLine(linha) {
@@ -234,6 +237,37 @@
             return { historico };
         }
 
+        // Extração de features estruturais de uma milhar
+        function extrairFeaturesEstruturais(mStr) {
+            let d0 = parseInt(mStr[0], 10);
+            let d1 = parseInt(mStr[1], 10);
+            let d2 = parseInt(mStr[2], 10);
+            let d3 = parseInt(mStr[3], 10);
+
+            let soma = d0 + d1 + d2 + d3;
+            let pares = [d0, d1, d2, d3].filter(n => n % 2 === 0).length;
+            let impares = 4 - pares;
+            let digitosUnicos = new Set([d0, d1, d2, d3]).size;
+            
+            let paridadeStr = `${d0%2===0?'P':'I'}-${d1%2===0?'P':'I'}-${d2%2===0?'P':'I'}-${d3%2===0?'P':'I'}`;
+            
+            // Verificação simples de sequência (ex: 1234, 4321, ou incrementos de 1)
+            let temSequencia = (d1 === (d0+1)%10 && d2 === (d1+1)%10 && d3 === (d2+1)%10) ||
+                               (d1 === (d0-1+10)%10 && d2 === (d1-1+10)%10 && d3 === (d2-1+10)%10);
+
+            let baixoAlto = (d0 <= 4 ? 'B' : 'A') + (d1 <= 4 ? 'B' : 'A') + (d2 <= 4 ? 'B' : 'A') + (d3 <= 4 ? 'B' : 'A');
+
+            return {
+                soma,
+                pares,
+                impares,
+                digitosUnicos,
+                paridadeStr,
+                temSequencia,
+                baixoAlto
+            };
+        }
+
         function processarEstatisticas(janelaSub, historicoCompleto) {
             let totalSorteios = janelaSub.length;
             let totalHistorico = historicoCompleto.length;
@@ -245,6 +279,16 @@
             let freqDezena = {};
             let freqCentena = {};
             let ultimaOcorrencia = {};
+
+            // Estatísticas posicionais (pos 1, 2, 3, 4)
+            let posFrequencies = [
+                {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0},
+                {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0},
+                {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0},
+                {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
+            ];
+
+            let estruturaFrequencies = {};
 
             for (let i = 0; i <= 9; i++) freqUnidade[i] = 0;
             for (let i = 0; i <= 99; i++) freqDezena[i.toString().padStart(2, '0')] = 0;
@@ -269,6 +313,15 @@
                 freqUnidade[u]++;
                 freqDezena[d]++;
                 freqCentena[c]++;
+
+                // Posições
+                for (let p = 0; p < 4; p++) {
+                    let dig = parseInt(m[p], 10);
+                    posFrequencies[p][dig]++;
+                }
+
+                let feat = extrairFeaturesEstruturais(m);
+                estruturaFrequencies[feat.paridadeStr] = (estruturaFrequencies[feat.paridadeStr] || 0) + 1;
             });
 
             let atrasoAtual = {};
@@ -284,9 +337,9 @@
             let maxUnidade = Math.max(...Object.values(freqUnidade), 1);
             let maxDezena = Math.max(...Object.values(freqDezena), 1);
             let maxCentena = Math.max(...Object.values(freqCentena), 1);
+            let maxEstrutura = Math.max(...Object.values(estruturaFrequencies), 1);
 
-            let freqTerminacao = {};
-            for (let i = 0; i <= 9; i++) freqTerminacao[i] = freqUnidade[i];
+            let maxPos = posFrequencies.map(pos => Math.max(...Object.values(pos), 1));
 
             return {
                 totalConcursos: totalHistorico,
@@ -296,7 +349,10 @@
                 freqUnidade,
                 freqDezena,
                 freqCentena,
-                freqTerminacao,
+                posFrequencies,
+                maxPos,
+                estruturaFrequencies,
+                maxEstrutura,
                 atrasoAtual,
                 maxFreqHist,
                 maxFreqRec,
@@ -324,6 +380,20 @@
                 let valD = (est.freqDezena[d] / est.maxDezena) * 100;
                 let valC = (est.freqCentena[c] / est.maxCentena) * 100;
 
+                // Score posicional (média das 4 posições)
+                let posScoreSum = 0;
+                for (let p = 0; p < 4; p++) {
+                    let dig = parseInt(mStr[p], 10);
+                    posScoreSum += (est.posFrequencies[p][dig] / est.maxPos[p]) * 100;
+                }
+                let valPosicional = posScoreSum / 4;
+
+                // Score estrutural
+                let feat = extrairFeaturesEstruturais(mStr);
+                let estrutFreq = est.estruturaFrequencies[feat.paridadeStr] || 0;
+                let valEstrutural = (estrutFreq / est.maxEstrutura) * 100;
+                if (feat.temSequencia) valEstrutural += 10; // bônus leve para sequências observadas
+
                 let atraso = est.atrasoAtual[mStr];
                 let recScore = Math.max(0, 100 - (Math.abs(atraso - (tamanhoTotal / 10)) * 2));
 
@@ -339,18 +409,17 @@
                     (valD  * PESOS_SCORE.dezena) +
                     (valC  * PESOS_SCORE.centena) +
                     (recScore * PESOS_SCORE.recencia) +
-                    (tendScore * PESOS_SCORE.tendencia);
+                    (tendScore * PESOS_SCORE.tendencia) +
+                    (valPosicional * PESOS_SCORE.posicional) +
+                    (valEstrutural * PESOS_SCORE.estrutural);
 
                 let motivos = [];
-                if (taxaRecente > taxaHistorica) motivos.push("✓ frequência recente acima da média");
-                else motivos.push("• frequência recente estável");
+                if (taxaRecente > taxaHistorica) motivos.push("✓ associação recente positiva");
+                else motivos.push("• associação recente estável");
 
-                if (valU > 70) motivos.push(`✓ unidade ${u} apresenta força relativa`);
-                if (valD > 70) motivos.push(`✓ dezena ${d} apresenta força relativa`);
-                if (tendenciaRatio > 1.1) motivos.push("✓ tendência positiva");
-                else if (tendenciaRatio < 0.9) motivos.push("⚠ tendência negativa");
-
-                if (atraso > (tamanhoTotal / 2)) motivos.push("⚠ atraso acima da média histórica");
+                if (valPosicional > 70) motivos.push("✓ alinhamento posicional forte");
+                if (valEstrutural > 70) motivos.push("✓ estrutura de paridade frequente");
+                if (atraso > (tamanhoTotal / 2)) motivos.push("⚠ atraso estatístico elevado");
                 else motivos.push("✓ recência equilibrada");
 
                 ranking.push({
@@ -359,11 +428,11 @@
                     componentes: {
                         frequencia: Math.round(valFH),
                         recencia: Math.round(recScore),
-                        unidade: Math.round(valU),
+                        term: Math.round(valU),
                         dezena: Math.round(valD),
-                        centena: Math.round(valC),
-                        tendencia: Math.round(tendScore),
-                        atraso: atraso
+                        atraso: Math.round(Math.max(0, 100 - atraso)),
+                        posicional: Math.round(valPosicional),
+                        estrutural: Math.round(valEstrutural)
                     },
                     motivos: motivos
                 });
@@ -394,34 +463,23 @@
             estatisticasGlobais = processarEstatisticas(histJanela, histCompleto);
             rankingGlobal = calcularScoreMilhares(estatisticasGlobais);
 
-            renderizarDashboard();
-            renderizarTerminacoes();
+            renderizarDashboardPosicional();
             renderizarPainelInteligente();
             renderizarDiagnosticoIA();
         }
 
-        function renderizarDashboard() {
+        function renderizarDashboardPosicional() {
             let est = estatisticasGlobais;
-            document.getElementById('dashCenario').innerHTML = `Status: Ativo<br>Amostras analisadas: ${est.totalConcursos} milhares (Janela: ${est.totalJanela})`;
-            
-            let melhorDezena = Object.entries(est.freqDezena).sort((a,b)=>b[1]-a[1])[0];
-            document.getElementById('dashPesos').innerHTML = `Dezena mais recorrente: <b>${melhorDezena ? melhorDezena[0] : '-'}</b> (${melhorDezena ? melhorDezena[1] : 0}x)`;
-            document.getElementById('dashBacktesting').textContent = `Última milhar registrada: ${est.ultimoSorteio || '-'}`;
-        }
-
-        function renderizarTerminacoes() {
             let mapaDiv = document.getElementById('mapaCalor');
             mapaDiv.innerHTML = '';
-            let est = estatisticasGlobais;
 
-            for (let i = 0; i <= 9; i++) {
-                let qtd = est.freqTerminacao[i];
-                let perc = est.totalJanela > 0 ? ((qtd / est.totalJanela) * 100).toFixed(0) : 0;
+            for (let p = 0; p < 4; p++) {
+                let posName = `Posição ${p+1}`;
+                let melhorDig = Object.entries(est.posFrequencies[p]).sort((a,b)=>b[1]-a[1])[0];
                 mapaDiv.innerHTML += `
-                    <div class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-center">
-                        <span class="block font-bold text-xs text-slate-700">Term. ${i}</span>
-                        <span class="block text-[11px] text-emerald-600 font-semibold">${perc}%</span>
-                        <span class="block text-[9px] text-slate-400">${qtd} ocorr.</span>
+                    <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl space-y-1">
+                        <span class="block font-bold text-slate-700">${posName}</span>
+                        <span class="block text-[11px] text-emerald-700 font-mono">Mais frequente: <b>${melhorDig ? melhorDig[0] : '-'}</b> (${melhorDig ? melhorDig[1] : 0}x)</span>
                     </div>
                 `;
             }
@@ -430,25 +488,25 @@
         function renderizarPainelInteligente() {
             let est = estatisticasGlobais;
             document.getElementById('painelInteligente').innerHTML = `
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Amostras Válidas: <b>${est.totalConcursos}</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Padrão de Dígitos: <b>4 Dígitos (0000-9999)</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor Analítico: <b>Score Estatístico Determinístico V1</b></div>
+                <div class="p-3 bg-white border border-slate-200 rounded-lg">Amostras Históricas: <b>${est.totalConcursos}</b></div>
+                <div class="p-3 bg-white border border-slate-200 rounded-lg">Features Ativas: <b>Posicional (4 Dígitos) + Estrutural (Paridade/Soma)</b></div>
+                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor V2: <b>Score Ponderado Multidimensional</b></div>
             `;
         }
 
         function renderizarDiagnosticoIA() {
             if (!rankingGlobal || rankingGlobal.length === 0) return;
             let top1 = rankingGlobal[0];
-            let top2Term = Object.entries(estatisticasGlobais.freqTerminacao).sort((a,b)=>b[1]-a[1])[0][0];
+            let featTop1 = extrairFeaturesEstruturais(top1.milhar);
 
             document.getElementById('iaMelhor1').textContent = top1.milhar;
-            document.getElementById('iaPrec1').textContent = `Score: ${top1.score.toFixed(2)} | Freq: ${top1.componentes.frequencia} | Recência: ${top1.componentes.recencia}`;
-            document.getElementById('iaMelhor2').textContent = `Final .${top2Term}`;
-            document.getElementById('iaPrec2').textContent = `Terminação mais recorrente`;
-            document.getElementById('iaConfiancaGeral').textContent = `Coerência estatística: ${Math.round(top1.score)}/100`;
-            document.getElementById('iaHibridoMix').textContent = `Ranking 100% Determinístico`;
+            document.getElementById('iaPrec1').textContent = `Score V2: ${top1.score.toFixed(2)} | Posicional: ${top1.componentes.posicional} | Estrutural: ${top1.componentes.estrutural}`;
+            document.getElementById('iaMelhor2').textContent = `Paridade: ${featTop1.paridadeStr} (Soma: ${featTop1.soma})`;
+            document.getElementById('iaPrec2').textContent = `Dígitos distintos: ${featTop1.digitosUnicos}`;
+            document.getElementById('iaConfiancaGeral').textContent = `Modelo V2 Ativo`;
+            document.getElementById('iaHibridoMix').textContent = `Diagnóstico por Ranking Real`;
 
-            let motivosHtml = top1.motivos.slice(0, 4).map(m => `<div>${m}</div>`).join('');
+            let motivosHtml = Object.entries(top1.componentes).map(([k, v]) => `<div>• ${k.toUpperCase()}: ${v} pts</div>`).join('');
             document.getElementById('listaMotivos').innerHTML = motivosHtml;
         }
 
@@ -489,30 +547,25 @@
             container.innerHTML = '';
 
             milharesGeradas.forEach((item, idx) => {
-                let motivosHtml = item.motivos.map(m => `<span class="block text-[10px] text-slate-500">${m}</span>`).join('');
+                let comp = item.componentes;
                 container.innerHTML += `
                     <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2 shadow-sm">
                         <div class="flex justify-between items-center">
-                            <span class="text-xs text-emerald-600 font-semibold">Projeção 0${idx + 1}</span>
+                            <span class="text-xs text-emerald-600 font-semibold">Projeção V2 0${idx + 1}</span>
                             <span class="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Score: ${item.score.toFixed(1)}</span>
                         </div>
                         <div class="text-3xl font-extrabold text-slate-800 font-mono tracking-wider text-center">${item.milhar}</div>
-                        <div class="grid grid-cols-3 gap-1 text-[10px] text-slate-600 font-mono bg-white p-2 rounded border border-slate-200 text-center">
-                            <div>Freq: <b>${item.componentes.frequencia}</b></div>
-                            <div>Rec: <b>${item.componentes.recencia}</b></div>
-                            <div>Tend: <b>${item.componentes.tendencia}</b></div>
-                            <div>Unid: <b>${item.componentes.unidade}</b></div>
-                            <div>Dez: <b>${item.componentes.dezena}</b></div>
-                            <div>Cent: <b>${item.componentes.centena}</b></div>
-                        </div>
-                        <div class="space-y-0.5 pt-1 border-t border-slate-200">
-                            ${motivosHtml}
+                        <div class="grid grid-cols-4 gap-1 text-[10px] text-slate-600 font-mono bg-white p-2 rounded border border-slate-200 text-center">
+                            <div>Rec: <b>${comp.recencia}</b></div>
+                            <div>Freq: <b>${comp.frequencia}</b></div>
+                            <div>Pos: <b>${comp.posicional}</b></div>
+                            <div>Estr: <b>${comp.estrutural}</b></div>
                         </div>
                     </div>
                 `;
             });
 
-            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares projetadas com base no ranking estatístico.`;
+            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares projetadas com base no ranking V2.`;
         }
 
         function gerarNovamente() {
@@ -521,16 +574,15 @@
 
         function executarModoCientifico() {
             if (historicoGlobal.length < 20) {
-                alert('Histórico insuficiente para backtest robusto (mínimo de 20 registros recomendados).');
+                alert('Histórico insuficiente para backtest V2 (mínimo de 20 registros recomendados).');
                 return;
             }
 
             let qtdMilharesSel = parseInt(document.getElementById('selectQtdJogos').value, 10) || 5;
             let testesRealizados = 0;
-            let acertosExatos = 0;
-            let acertosDezena = 0;
-            let acertosUnidade = 0;
-            let acertosCentena = 0;
+            let posicoesReais = [];
+
+            let top1Count = 0, top5Count = 0, top10Count = 0, top20Count = 0, top50Count = 0, top100Count = 0, top500Count = 0, top1000Count = 0, foraCount = 0;
 
             let inicioCutoff = Math.max(10, historicoGlobal.length - 50);
             for (let i = inicioCutoff; i < historicoGlobal.length; i++) {
@@ -540,40 +592,59 @@
                 let estSub = processarEstatisticas(subHistorico.slice(-20), subHistorico);
                 let rankingSub = calcularScoreMilhares(estSub);
 
-                let topN = rankingSub.slice(0, qtdMilharesSel);
-                let milharesTopN = topN.map(t => t.milhar);
+                let posIndex = rankingSub.findIndex(r => r.milhar === proximoReal);
+                let posicaoReal = posIndex !== -1 ? posIndex + 1 : 10001;
 
+                posicoesReais.push(posicaoReal);
                 testesRealizados++;
-                if (milharesTopN.includes(proximoReal)) {
-                    acertosExatos++;
-                }
 
-                let realU = proximoReal.slice(-1);
-                let realD = proximoReal.slice(-2);
-                let realC = proximoReal.slice(-3);
-
-                if (topN.some(t => t.milhar.slice(-1) === realU)) acertosUnidade++;
-                if (topN.some(t => t.milhar.slice(-2) === realD)) acertosDezena++;
-                if (topN.some(t => t.milhar.slice(-3) === realC)) acertosCentena++;
+                if (posicaoReal === 1) top1Count++;
+                if (posicaoReal <= 5) top5Count++;
+                if (posicaoReal <= 10) top10Count++;
+                if (posicaoReal <= 20) top20Count++;
+                if (posicaoReal <= 50) top50Count++;
+                if (posicaoReal <= 100) top100Count++;
+                if (posicaoReal <= 500) top500Count++;
+                if (posicaoReal <= 1000) top1000Count++;
+                else foraCount++;
             }
 
-            let baselineProb = (qtdMilharesSel / 10000) * testesRealizados;
-            
-            let statusSinal = "INCONCLUSIVO";
-            if (acertosExatos > baselineProb * 1.5 && testesRealizados >= 10) {
-                statusSinal = "SINAL POSITIVO";
-            } else if (acertosExatos === 0 && testesRealizados >= 20) {
-                statusSinal = "SEM EVIDÊNCIA";
+            let posicaoMedia = posicoesReais.reduce((a,b)=>a+b, 0) / (posicoesReais.length || 1);
+            let baselineTop100Pct = ((100 / 10000) * 100).toFixed(1);
+            let modeloTop100Pct = ((top100Count / testesRealizados) * 100).toFixed(1);
+
+            let statusSinal = "INCONCLUSIVO / SEM VANTAGEM CLARA";
+            if (modeloTop100Pct > baselineTop100Pct * 1.5) {
+                statusSinal = "SINAL POSITIVO IDENTIFICADO";
             }
 
-            document.getElementById('dashBacktesting').innerHTML = `
-                <b>Backtest Walk-Forward Concluído:</b><br>
-                Testes: ${testesRealizados} | Acertos Exatos: <b>${acertosExatos}</b> (Baseline teórica: ${baselineProb.toFixed(1)})<br>
-                Parciais -> Unidade: ${acertosUnidade} | Dezena: ${acertosDezena} | Centena: ${acertosCentena}<br>
+            let p1 = ((top1Count/testesRealizados)*100).toFixed(1);
+            let p5 = ((top5Count/testesRealizados)*100).toFixed(1);
+            let p10 = ((top10Count/testesRealizados)*100).toFixed(1);
+            let p50 = ((top50Count/testesRealizados)*100).toFixed(1);
+            let p100 = ((top100Count/testesRealizados)*100).toFixed(1);
+
+            document.getElementById('dashCenario').innerHTML = `
+                <b>DIAGNÓSTICO DO RANKING (V2):</b><br>
+                Posição Média: <b>${Math.round(posicaoMedia)}</b><br>
+                Top 1: ${p1}% | Top 5: ${p5}%<br>
+                Top 10: ${p10}% | Top 50: ${p50}%<br>
+                Top 100: ${p100}%
+            `;
+
+            document.getElementById('dashPesos').innerHTML = `
+                <b>COMPARAÇÃO COM BASELINE:</b><br>
+                Modelo Top 100: ${modeloTop100Pct}%<br>
+                Baseline Teórica Top 100: ${baselineTop100Pct}%<br>
                 Classificação: <span class="font-bold text-emerald-700">${statusSinal}</span>
             `;
 
-            alert(`Backtest executado com sucesso!\nTestes: ${testesRealizados}\nAcertos Exatos: ${acertosExatos}\nClassificação: ${statusSinal}`);
+            document.getElementById('dashBacktesting').innerHTML = `
+                Testes Realizados: ${testesRealizados} | Posição Média Real: ${Math.round(posicaoMedia)}<br>
+                Avaliação concluída com sucesso.
+            `;
+
+            alert(`Backtest V2 Concluído!\nTestes: ${testesRealizados}\nPosição Média no Ranking: ${Math.round(posicaoMedia)}`);
         }
 
         function conferirMilhares() {
@@ -588,7 +659,7 @@
             }
             let itemEncontrado = milharesGeradas.find(s => s.milhar === val);
             if (itemEncontrado) {
-                alert(`Parabéns! A milhar ${val} estava entre as projeções recomendadas (Score: ${itemEncontrado.score.toFixed(1)})!`);
+                alert(`Parabéns! A milhar ${val} estava entre as projeções recomendadas V2 (Score: ${itemEncontrado.score.toFixed(1)})!`);
             } else {
                 alert(`A milhar ${val} não estava no grupo projetado desta vez.`);
             }
@@ -599,11 +670,11 @@
                 alert('Nenhuma milhar gerada para exportar.');
                 return;
             }
-            let texto = "--- MILHARES PROJETADAS LOTOCE (SCORE V1) ---\n" + milharesGeradas.map((m, i) => `Projeção ${i+1}: ${m.milhar} (Score: ${m.score.toFixed(1)})`).join('\n');
+            let texto = "--- MILHARES PROJETADAS LOTOCE V2 ---\n" + milharesGeradas.map((m, i) => `Projeção ${i+1}: ${m.milhar} (Score V2: ${m.score.toFixed(1)})`).join('\n');
             let blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
             let link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'milhares_projetadas_lotoce.txt';
+            link.download = 'milhares_projetadas_lotoce_v2.txt';
             link.click();
         }
 
@@ -616,8 +687,8 @@
         function limparTudo() {
             document.getElementById('inputHistorico').value = '';
             limparJogos();
-            document.getElementById('dashCenario').textContent = '-';
-            document.getElementById('dashPesos').textContent = '-';
+            document.getElementById('dashCenario').textContent = 'Aguardando execução do backtest...';
+            document.getElementById('dashPesos').textContent = 'Aguardando avaliação comparativa...';
             document.getElementById('dashBacktesting').textContent = '-';
             rankingGlobal = [];
         }
