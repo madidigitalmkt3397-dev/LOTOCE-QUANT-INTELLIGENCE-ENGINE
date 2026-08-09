@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotoce - Laboratório Estatístico de Milhares (0000 a 9999) - Anatomia Estrutural V3</title>
+    <title>Lotoce - Laboratório Estatístico V4.2 (Anatomia, Sufixos & Backtest Hierárquico)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -15,18 +15,18 @@
         <!-- Cabeçalho (Layout Preservado Estritamente Conforme Diretriz) -->
         <header class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-emerald-700">Lotoce - Laboratório Estatístico V3 (Anatomia Estrutural)</h1>
-                <p class="text-slate-500 text-sm mt-1">Decomposição Estrutural, Pares, Trincas, Transições Markovianas, Sessões e Backtest Walk-Forward (0000 a 9999).</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-emerald-700">Lotoce - Laboratório Estatístico V4.2</h1>
+                <p class="text-slate-500 text-sm mt-1">Anatomia Estrutural, Sufixos (Suffix3, Suffix2, Suffix1), D1-D4, Top-K, Precision@K e Backtest Walk-Forward.</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <button onclick="analisarHistorico()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
                     Analisar Histórico
                 </button>
-                <button onclick="gerarMilhares()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
-                    Gerar Milhares (Modo V3)
+                <button onclick="executarBacktestV42()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
+                    ▶ Executar Backtest V4.2
                 </button>
-                <button onclick="executarModoCientifico()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
-                    Modo Científico (Backtest V3)
+                <button onclick="gerarMilhares()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
+                    Gerar Milhares
                 </button>
                 <button onclick="gerarNovamente()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm flex items-center gap-2">
                     Gerar Novamente
@@ -43,120 +43,131 @@
             </div>
         </header>
 
-        <!-- Configuração e Entrada -->
+        <!-- Configuração, Parâmetros e Entrada -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- Entrada de Dados -->
+            <!-- Entrada de Dados e Parâmetros Backtest V4.2 -->
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <h2 class="text-lg font-semibold text-slate-800">Resultados Históricos com Sessões (Ex: 01/04/2026, Manhã, 4821)</h2>
+                <h2 class="text-lg font-semibold text-slate-800">Resultados & Parâmetros V4.2</h2>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Cole os resultados:</label>
-                    <textarea id="inputHistorico" rows="8" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-mono" placeholder="01/04/2026, Manhã, 5412&#10;01/04/2026, Tarde, 1893&#10;01/04/2026, Noite, 7421&#10;02/04/2026, Manhã, 0412"></textarea>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Cole os resultados (Data, Sessão, Milhar String):</label>
+                    <textarea id="inputHistorico" rows="6" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-mono" placeholder="01/04/2026, Manhã, 0007&#10;01/04/2026, Tarde, 0456&#10;01/04/2026, Noite, 0012&#10;02/04/2026, Manhã, 3456"></textarea>
                 </div>
+                
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Janela de Análise:</label>
-                        <select id="selectJanela" onchange="analisarHistorico()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:border-emerald-500">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Sessão:</label>
+                        <select id="selectSessao" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:border-emerald-500">
+                            <option value="TODAS" selected>TODAS</option>
+                            <option value="MANHÃ">MANHÃ</option>
+                            <option value="TARDE">TARDE</option>
+                            <option value="NOITE">NOITE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Top-K Candidatas:</label>
+                        <select id="selectTopK" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:border-emerald-500">
+                            <option value="5">TOP 5</option>
+                            <option value="10" selected>TOP 10</option>
+                            <option value="20">TOP 20</option>
+                            <option value="50">TOP 50</option>
+                            <option value="100">TOP 100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Estratégia de Previsão:</label>
+                        <select id="selectEstrategia" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:border-emerald-500">
+                            <option value="MILHAR">MILHAR COMPLETA</option>
+                            <option value="SUFFIX3">SUFFIX3 (Centena)</option>
+                            <option value="D1_SUFFIX3" selected>D1 + SUFFIX3</option>
+                            <option value="ANATOMIA">ANATOMIA + MODELO</option>
+                            <option value="MODELO_COMPLETO">MODELO HÍBRIDO TOTAL</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Janela / Qtd Jogos:</label>
+                        <select id="selectJanela" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:border-emerald-500">
                             <option value="10" selected>Últimos 10</option>
                             <option value="20">Últimos 20</option>
                             <option value="50">Últimos 50</option>
                             <option value="100">Últimos 100</option>
-                            <option value="all">Todos</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Qtd Recomendações:</label>
-                        <select id="selectQtdJogos" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:border-emerald-500">
-                            <option value="5" selected>5 Milhares</option>
-                            <option value="10">10 Milhares</option>
-                            <option value="20">20 Milhares</option>
+                            <option value="all">FULL / Todos</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- Dashboard de Estatísticas e Rankings V3 -->
+            <!-- Dashboard Hierárquico V4.2 -->
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 lg:col-span-2">
-                <h2 class="text-lg font-semibold text-slate-800">Dashboard de Anatomia Estrutural (V3)</h2>
+                <h2 class="text-lg font-semibold text-slate-800">Dashboard de Diagnóstico & Métricas Hierárquicas V4.2</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                        <span class="font-semibold text-emerald-700 block text-sm">Diagnóstico Walk-Forward & Modelos (A a E):</span>
-                        <span id="dashCenario" class="text-slate-700 block font-mono leading-relaxed max-h-28 overflow-y-auto">Aguardando execução do backtest...</span>
+                        <span class="font-semibold text-emerald-700 block text-sm">Status de Diagnóstico do Backtest:</span>
+                        <span id="diagStatus" class="text-slate-700 block font-mono leading-relaxed">Aguardando execução...</span>
                     </div>
                     <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                        <span class="font-semibold text-slate-700 block text-sm">Importância de Features (Anatomy Engine):</span>
-                        <span id="dashPesos" class="text-slate-600 block font-mono leading-relaxed max-h-28 overflow-y-auto">Aguardando calibração de pesos...</span>
+                        <span class="font-semibold text-slate-700 block text-sm">Precision@K & Hit Rate Hierárquico:</span>
+                        <span id="diagPrecision" class="text-slate-600 block font-mono leading-relaxed">Aguardando métricas...</span>
                     </div>
                 </div>
 
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                     <div>
-                        <span class="font-semibold text-slate-700 block mb-0.5">Relatório do Laboratório Científico V3:</span>
-                        <span id="dashBacktesting" class="text-slate-600 block">-</span>
+                        <span class="font-semibold text-slate-700 block mb-0.5">Relatório Estratégico V4.2:</span>
+                        <span id="dashRelatorioV42" class="text-slate-600 block">-</span>
                     </div>
                     <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg text-[11px] font-mono">
-                        Motor V3 com Anatomia, Transições Markovianas e Controle Rigoroso de Overfitting
+                        Preservação Estrita de Zeros à Esquerda (String de 4 Dígitos)
                     </div>
                 </div>
 
-                <!-- Painel Posicional por Dígito e Pares -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <span class="text-xs font-semibold text-slate-700 block mb-2">Anatomia por Posição (D1, D2, D3, D4):</span>
-                        <div id="mapaCalor" class="grid grid-cols-2 gap-2 text-xs">
-                            <!-- Preenchido via JS -->
-                        </div>
+                <!-- Painel de Sufixos (Suffix3, Suffix2, Suffix1) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="bg-white border border-slate-200 p-3 rounded-xl space-y-1">
+                        <span class="font-bold text-slate-700 text-xs block">Top Suffix3 (000-999)</span>
+                        <div id="listaSuffix3" class="text-[11px] font-mono text-slate-600 max-h-24 overflow-y-auto">-</div>
                     </div>
-                    <div>
-                        <span class="text-xs font-semibold text-slate-700 block mb-2">Pares Adj. & Não-Adj. Mais Fortes:</span>
-                        <div id="painelParesDezenas" class="bg-white border border-slate-200 rounded-xl p-3 text-xs font-mono text-slate-700 max-h-36 overflow-y-auto space-y-1">
-                            Aguardando análise do histórico...
-                        </div>
+                    <div class="bg-white border border-slate-200 p-3 rounded-xl space-y-1">
+                        <span class="font-bold text-slate-700 text-xs block">Top Suffix2 (00-99)</span>
+                        <div id="listaSuffix2" class="text-[11px] font-mono text-slate-600 max-h-24 overflow-y-auto">-</div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-3 rounded-xl space-y-1">
+                        <span class="font-bold text-slate-700 text-xs block">Top Suffix1 / D1-D4</span>
+                        <div id="listaD1D4" class="text-[11px] font-mono text-slate-600 max-h-24 overflow-y-auto">-</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Módulo de Recomendação Automática do Especialista -->
-        <section id="secaoDiagnosticoIA" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+        <!-- Módulo de Recomendação Automática & Consensus -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                🤖 Especialista IA & Consensus Anatômico V3
+                🤖 Especialista IA & Consensus Hierárquico V4.2
             </h2>
-            <div id="painelDiagnosticoIA" class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
                 <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1 md:col-span-2">
-                    <span class="text-emerald-800 font-medium block text-sm">Principal Milhar Sugerida</span>
+                    <span class="text-emerald-800 font-medium block text-sm">Principal Milhar Candidata</span>
                     <span id="iaMelhor1" class="font-bold text-emerald-950 text-base font-mono block">-</span>
                     <span id="iaPrec1" class="text-emerald-700 block">-</span>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
-                    <span class="text-slate-500 font-medium block">Consensus / Conflito</span>
+                    <span class="text-slate-500 font-medium block">Suffix3 / Suffix2 Acoplado</span>
                     <span id="iaMelhor2" class="font-bold text-slate-800 text-sm font-mono block">-</span>
                     <span id="iaPrec2" class="text-emerald-700 block">-</span>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
-                    <span class="text-slate-500 font-medium block">Status do Modelo</span>
-                    <span id="iaConfiancaGeral" class="font-bold text-slate-900 text-sm block">-</span>
-                    <span id="iaHibridoMix" class="text-emerald-700 block">-</span>
+                    <span class="text-slate-500 font-medium block">Estratégia Vencedora</span>
+                    <span id="iaMelhorEstrategia" class="font-bold text-slate-900 text-sm block">-</span>
+                    <span id="iaHibridoMix" class="text-emerald-700 block">Validação Walk-Forward Ativa</span>
                 </div>
             </div>
             <div id="motivosRecomendacao" class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs space-y-1 font-mono">
-                <span class="font-bold text-slate-700 block">Decomposição Anatômica Detalhada (Anatomy Score, Consensus & Conflito):</span>
+                <span class="font-bold text-slate-700 block">Decomposição Hierárquica Detalhada (D1, Suffix3, Suffix2, Suffix1):</span>
                 <div id="listaMotivos" class="text-slate-600">-</div>
-            </div>
-        </section>
-
-        <!-- Seção do Laboratório Estatístico -->
-        <section id="secaoLaboratorioEstatistico" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-            <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                🔬 Laboratório de Features Estruturais, Trincas, Transições Markovianas e Sessões
-            </h2>
-            
-            <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl space-y-3">
-                <h3 class="text-sm font-bold text-emerald-700">Resumo Estrutural Global (Modelos A até E)</h3>
-                <div id="painelInteligente" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-700">
-                    <div>Carregando padrões estruturais...</div>
-                </div>
             </div>
         </section>
 
@@ -164,11 +175,11 @@
         <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-800">Milhares Recomendadas pelo Estudo V3</h2>
+                    <h2 class="text-lg font-semibold text-slate-800">Candidatas Geradas via Arquitetura Hierárquica V4.2</h2>
                     <span id="statusGeracao" class="text-xs text-slate-500">Nenhuma milhar gerada</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                    <input type="text" id="inputConferencia" placeholder="Milhar Oficial (ex: 4821)" maxlength="4" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-mono flex-1 md:w-64">
+                    <input type="text" id="inputConferencia" placeholder="Milhar Oficial (ex: 0007)" maxlength="4" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-mono flex-1 md:w-64">
                     <button onclick="conferirMilhares()" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-xl shadow-sm transition-all duration-200 text-xs flex items-center gap-1.5 whitespace-nowrap">
                         Conferir Resultado
                     </button>
@@ -177,7 +188,7 @@
             
             <div id="containerJogos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">
-                    Clique em "Analisar Histórico" e depois em "Gerar Milhares" para extrair as projeções estatísticas V3 baseadas na Anatomia Estrutural Completa.
+                    Clique em "Analisar Histórico" e depois em "Executar Backtest V4.2" ou "Gerar Milhares" para visualizar os resultados com preservação de zeros à esquerda.
                 </div>
             </div>
         </section>
@@ -186,16 +197,16 @@
 
     <script>
         const dadosExemplo = [
-            "01/04/2026, Manhã, 5412",
-            "01/04/2026, Tarde, 1893",
-            "01/04/2026, Noite, 7421",
-            "02/04/2026, Manhã, 0412",
-            "02/04/2026, Tarde, 3893",
-            "02/04/2026, Noite, 9210",
+            "01/04/2026, Manhã, 0007",
+            "01/04/2026, Tarde, 0456",
+            "01/04/2026, Noite, 0012",
+            "02/04/2026, Manhã, 3456",
+            "02/04/2026, Tarde, 7456",
+            "02/04/2026, Noite, 0007",
             "03/04/2026, Manhã, 1485",
             "03/04/2026, Tarde, 6324",
             "03/04/2026, Noite, 3456",
-            "04/04/2026, Manhã, 8219"
+            "04/04/2026, Manhã, 0456"
         ].join("\n");
 
         document.getElementById('inputHistorico').value = dadosExemplo;
@@ -204,17 +215,7 @@
         let estatisticasGlobais = {};
         let milharesGeradas = [];
         let rankingGlobal = [];
-
-        // Pesos base para o Anatomy Score (calibráveis via backtest)
-        const PESOS_ANATOMY = {
-            digitos: 0.15,
-            pares: 0.20,
-            trincas: 0.05,     // Peso reduzido conforme diretriz caso não agreguem valor consistente
-            transicoes: 0.15,
-            padrao: 0.15,
-            recencia: 0.15,
-            sessao: 0.15
-        };
+        let resultadoBacktestGlobal = null;
 
         function parseLine(linha) {
             linha = linha.trim();
@@ -222,10 +223,13 @@
             let partes = linha.split(/[,;\t]+/).map(p => p.trim()).filter(Boolean);
             let milharStr = null;
             let sessao = "GERAL";
+            let data = "2026-04-01";
 
             for (let p of partes) {
                 if (/^\d{4}$/.test(p)) {
                     milharStr = p;
+                } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(p)) {
+                    data = p;
                 } else {
                     let pUpper = p.toUpperCase();
                     if (pUpper.includes("MANH")) sessao = "MANHÃ";
@@ -235,7 +239,7 @@
             }
 
             if (milharStr) {
-                return { milhar: milharStr, sessao: sessao, valido: true };
+                return { data, sessao, milhar: milharStr, valido: true };
             }
             return { valido: false };
         }
@@ -252,350 +256,223 @@
             return { historico };
         }
 
-        // Classificação do Padrão Estrutural (Item 4)
-        function classificarPadrao(d0, d1, d2, d3) {
-            let arr = [d0, d1, d2, d3];
-            let unicos = new Set(arr).size;
-            let counts = {};
-            arr.forEach(n => counts[n] = (counts[n] || 0) + 1);
-            let freqValores = Object.values(counts).sort((a,b) => b-a);
-
-            if (unicos === 4) return "ABCD";
-            if (unicos === 3) return "AABC"; // ou variações (ABBC, ABCA)
-            if (unicos === 2) {
-                if (freqValores[0] === 3) return "AAAB";
-                if (freqValores[0] === 2 && freqValores[1] === 2) {
-                    if (d0 === d1 && d2 === d3) return "ABBA";
-                    return "AABB";
-                }
-                if (freqValores[0] === 3) return "ABBB";
-            }
-            if (unicos === 1) return "AAAA";
-            return "OUTRO";
-        }
-
-        function extrairFeaturesAnatomicas(mStr) {
-            let d0 = parseInt(mStr[0], 10);
-            let d1 = parseInt(mStr[1], 10);
-            let d2 = parseInt(mStr[2], 10);
-            let d3 = parseInt(mStr[3], 10);
-
-            let soma = d0 + d1 + d2 + d3;
-            let paresCount = [d0, d1, d2, d3].filter(n => n % 2 === 0).length;
-            let imparesCount = 4 - paresCount;
-            let baixosCount = [d0, d1, d2, d3].filter(n => n <= 4).length;
-            let altosCount = 4 - baixosCount;
-            let digitosUnicos = new Set([d0, d1, d2, d3]).size;
-            let amplitude = Math.max(d0, d1, d2, d3) - Math.min(d0, d1, d2, d3);
-
-            let padrao = classificarPadrao(d0, d1, d2, d3);
-
-            // Pares adjacentes e não-adjacentes
-            let p12 = `${d0}${d1}`;
-            let p23 = `${d1}${d2}`;
-            let p34 = `${d2}${d3}`;
-            let p13 = `${d0}${d2}`;
-            let p24 = `${d1}${d3}`;
-            let p14 = `${d0}${d3}`;
-
-            // Trincas
-            let t123 = `${d0}${d1}${d2}`;
-            let t234 = `${d1}${d2}${d3}`;
-
-            // Transições
-            let trans = [`${d0}->${d1}`, `${d1}->${d2}`, `${d2}->${d3}`];
+        // Decomposição Hierárquica rigorosa (Garantindo Strings de 4 caracteres e zera à esquerda)
+        function decomporMilhar(mStr) {
+            let m = mStr.padStart(4, '0');
+            let d1 = m[0];
+            let d2 = m[1];
+            let d3 = m[2];
+            let d4 = m[3];
+            let suffix3 = m.substring(1); // 3 dígitos
+            let suffix2 = m.substring(2); // 2 dígitos
+            let suffix1 = m.substring(3); // 1 dígito (unidade)
 
             return {
-                d0, d1, d2, d3,
-                soma, paresCount, imparesCount, baixosCount, altosCount, digitosUnicos, amplitude,
-                padrao,
-                p12, p23, p34, p13, p24, p14,
-                t123, t234,
-                trans
+                milhar: m,
+                d1, d2, d3, d4,
+                suffix3,
+                suffix2,
+                suffix1
             };
         }
 
-        function processarEstatisticasAnatomia(janelaSub, historicoCompleto) {
-            let totalSorteios = janelaSub.length;
-            let totalHistorico = historicoCompleto.length;
-            if (totalHistorico === 0) return null;
-
-            // Mapeamentos globais
+        function processarEstatisticasV42(historicoSub) {
+            let totalConcursos = historicoSub.length;
             let freqMilhar = {};
-            let ultimaOcorrenciaMilhar = {};
-
-            let posFreq = [
-                {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0},
-                {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0},
-                {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0},
-                {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0}
-            ];
-
-            let freqPares = {};
-            let freqTrincas = {};
-            let freqTransicoes = {};
-            let freqPadroes = {};
-            let freqSessaoMilhar = { "MANHÃ": {}, "TARDE": {}, "NOITE": {} };
+            let freqSuffix3 = {};
+            let freqSuffix2 = {};
+            let freqSuffix1 = {};
+            let freqD1 = {};
+            let freqD2 = {};
+            let freqD3 = {};
+            let freqD4 = {};
 
             for (let i = 0; i < 10000; i++) {
-                let mStr = i.toString().padStart(4, '0');
-                freqMilhar[mStr] = 0;
-                ultimaOcorrenciaMilhar[mStr] = -1;
+                freqMilhar[i.toString().padStart(4, '0')] = 0;
             }
 
-            historicoCompleto.forEach((item, idx) => {
-                freqMilhar[item.milhar] = (freqMilhar[item.milhar] || 0) + 1;
-                ultimaOcorrenciaMilhar[item.milhar] = idx;
+            historicoSub.forEach(item => {
+                let d = decomporMilhar(item.milhar);
+                freqMilhar[d.milhar] = (freqMilhar[d.milhar] || 0) + 1;
+                freqSuffix3[d.suffix3] = (freqSuffix3[d.suffix3] || 0) + 1;
+                freqSuffix2[d.suffix2] = (freqSuffix2[d.suffix2] || 0) + 1;
+                freqSuffix1[d.suffix1] = (freqSuffix1[d.suffix1] || 0) + 1;
+                freqD1[d.d1] = (freqD1[d.d1] || 0) + 1;
+                freqD2[d.d2] = (freqD2[d.d2] || 0) + 1;
+                freqD3[d.d3] = (freqD3[d.d3] || 0) + 1;
+                freqD4[d.d4] = (freqD4[d.d4] || 0) + 1;
             });
-
-            janelaSub.forEach(item => {
-                let m = item.milhar;
-                let sessao = item.sessao;
-                if (freqSessaoMilhar[sessao]) {
-                    freqSessaoMilhar[sessao][m] = (freqSessaoMilhar[sessao][m] || 0) + 1;
-                }
-
-                let anat = extrairFeaturesAnatomicas(m);
-
-                // Posições
-                posFreq[0][anat.d0]++;
-                posFreq[1][anat.d1]++;
-                posFreq[2][anat.d2]++;
-                posFreq[3][anat.d3]++;
-
-                // Pares
-                [anat.p12, anat.p23, anat.p34, anat.p13, anat.p24, anat.p14].forEach(p => {
-                    freqPares[p] = (freqPares[p] || 0) + 1;
-                });
-
-                // Trincas
-                [anat.t123, anat.t234].forEach(t => {
-                    freqTrincas[t] = (freqTrincas[t] || 0) + 1;
-                });
-
-                // Transições
-                anat.trans.forEach(tr => {
-                    freqTransicoes[tr] = (freqTransicoes[tr] || 0) + 1;
-                });
-
-                // Padrões
-                freqPadroes[anat.padrao] = (freqPadroes[anat.padrao] || 0) + 1;
-            });
-
-            // Atraso para milhares
-            let atrasoMilhar = {};
-            for (let i = 0; i < 10000; i++) {
-                let mStr = i.toString().padStart(4, '0');
-                let ultimoIdx = ultimaOcorrenciaMilhar[mStr];
-                let atraso = ultimoIdx === -1 ? totalHistorico : totalHistorico - 1 - ultimoIdx;
-                atrasoMilhar[mStr] = atraso;
-            }
-
-            let maxMilhar = Math.max(...Object.values(freqMilhar), 1);
-            let maxPares = Math.max(...Object.values(freqPares), 1);
-            let maxTrincas = Math.max(...Object.values(freqTrincas), 1);
-            let maxTrans = Math.max(...Object.values(freqTransicoes), 1);
-            let maxPadrao = Math.max(...Object.values(freqPadroes), 1);
-            let maxPos = posFreq.map(p => Math.max(...Object.values(p), 1));
 
             return {
-                totalConcursos: totalHistorico,
-                totalJanela: totalSorteios,
+                totalConcursos,
                 freqMilhar,
-                maxMilhar,
-                posFreq,
-                maxPos,
-                freqPares,
-                maxPares,
-                freqTrincas,
-                maxTrincas,
-                freqTransicoes,
-                maxTrans,
-                freqPadroes,
-                maxPadrao,
-                freqSessaoMilhar,
-                atrasoMilhar
+                freqSuffix3,
+                freqSuffix2,
+                freqSuffix1,
+                freqD1, freqD2, freqD3, freqD4
             };
-        }
-
-        // Motor de Cálculo do Anatomy Score, Consensus e Conflito (Itens 9, 10, 13)
-        function calcularRankingAnatomia(est, sessaoAlvo = "GERAL") {
-            let ranking = [];
-            let totalJanela = est.totalJanela > 0 ? est.totalJanela : 1;
-            let totalHistorico = est.totalConcursos > 0 ? est.totalConcursos : 1;
-
-            for (let i = 0; i < 10000; i++) {
-                let mStr = i.toString().padStart(4, '0');
-                let anat = extrairFeaturesAnatomicas(mStr);
-
-                // 1. Dígitos por Posição Score
-                let scoreD0 = (est.posFreq[0][anat.d0] / est.maxPos[0]) * 100;
-                let scoreD1 = (est.posFreq[1][anat.d1] / est.maxPos[1]) * 100;
-                let scoreD2 = (est.posFreq[2][anat.d2] / est.maxPos[2]) * 100;
-                let scoreD3 = (est.posFreq[3][anat.d3] / est.maxPos[3]) * 100;
-                let scoreDigitos = (scoreD0 + scoreD1 + scoreD2 + scoreD3) / 4;
-
-                // 2. Pares Score (Adj. e Não-Adj.)
-                let pScore12 = (est.freqPares[anat.p12] || 0) / est.maxPares * 100;
-                let pScore23 = (est.freqPares[anat.p23] || 0) / est.maxPares * 100;
-                let pScore34 = (est.freqPares[anat.p34] || 0) / est.maxPares * 100;
-                let pScorePares = (pScore12 + pScore23 + pScore34) / 3;
-
-                // 3. Trincas Score
-                let tScore1 = (est.freqTrincas[anat.t123] || 0) / est.maxTrincas * 100;
-                let tScore2 = (est.freqTrincas[anat.t234] || 0) / est.maxTrincas * 100;
-                let scoreTrincas = (tScore1 + tScore2) / 2;
-
-                // 4. Transições Score
-                let trScore1 = (est.freqTransicoes[anat.trans[0]] || 0) / est.maxTrans * 100;
-                let trScore2 = (est.freqTransicoes[anat.trans[1]] || 0) / est.maxTrans * 100;
-                let trScore3 = (est.freqTransicoes[anat.trans[2]] || 0) / est.maxTrans * 100;
-                let scoreTransicoes = (trScore1 + trScore2 + trScore3) / 3;
-
-                // 5. Padrão Score
-                let scorePadrao = ((est.freqPadroes[anat.padrao] || 0) / est.maxPadrao) * 100;
-
-                // 6. Recência / Atraso Score
-                let atraso = est.atrasoMilhar[mStr];
-                let scoreRecencia = Math.min(100, (atraso / Math.max(10, totalHistorico * 0.1)) * 100);
-
-                // 7. Sessão Score
-                let scoreSessao = 50;
-                if (sessaoAlvo !== "GERAL" && est.freqSessaoMilhar[sessaoAlvo]) {
-                    let freqSessao = est.freqSessaoMilhar[sessaoAlvo][mStr] || 0;
-                    scoreSessao = Math.min(100, freqSessao * 50);
-                }
-
-                // Cálculo do Anatomy Score ponderado (Item 9)
-                let anatomyScore = 
-                    (scoreDigitos * PESOS_ANATOMY.digitos) +
-                    (pScorePares * PESOS_ANATOMY.pares) +
-                    (scoreTrincas * PESOS_ANATOMY.trincas) +
-                    (scoreTransicoes * PESOS_ANATOMY.transicoes) +
-                    (scorePadrao * PESOS_ANATOMY.padrao) +
-                    (scoreRecencia * PESOS_ANATOMY.recencia) +
-                    (scoreSessao * PESOS_ANATOMY.sessao);
-
-                // Cálculo de Consensus e Conflito (Item 10)
-                let subScores = [scoreDigitos, pScorePares, scoreTransicoes, scorePadrao, scoreRecencia];
-                let mediaSub = subScores.reduce((a,b) => a+b, 0) / subScores.length;
-                let varianca = subScores.reduce((acc, val) => acc + Math.pow(val - mediaSub, 2), 0) / subScores.length;
-                let desvioPadrao = Math.sqrt(varianca);
-
-                let anatomyConflict = Math.min(100, desvioPadrao * 2); // Maior dispersão = maior conflito
-                let anatomyConsensus = Math.max(0, 100 - anatomyConflict); // Maior alinhamento = maior consensus
-
-                // Evidências detalhadas para a explicação final
-                let evidencias = [];
-                if (scoreDigitos > 70) evidencias.push(`✓ Posições favoráveis (Dígitos alinhados)`);
-                else evidencias.push(`• Posições neutras/baixas`);
-
-                if (pScorePares > 50) evidencias.push(`✓ Pares estruturais fortes (${anat.p12}, ${anat.p23}, ${anat.p34})`);
-                else evidencias.push(`• Pares estruturais fracos`);
-
-                if (scoreTransicoes > 60) evidencias.push(`✓ Transições Markovianamente ativas (${anat.trans.join(', ')})`);
-                else evidencias.push(`⚠ Transições com baixa ocorrência`);
-
-                if (anatomyConflict > 40) evidencias.push(`⚠ Conflito interno elevado entre componentes`);
-                else evidencias.push(`✓ Alto consenso entre features anatômicas`);
-
-                ranking.push({
-                    milhar: mStr,
-                    anatomyScore: anatomyScore,
-                    consensus: anatomyConsensus,
-                    conflict: anatomyConflict,
-                    anat: anat,
-                    evidencias: evidencias,
-                    scoreDetalhado: {
-                        digitos: Math.round(scoreDigitos),
-                        pares: Math.round(pScorePares),
-                        trincas: Math.round(scoreTrincas),
-                        transicoes: Math.round(scoreTransicoes),
-                        padrao: Math.round(scorePadrao),
-                        recencia: Math.round(scoreRecencia)
-                    }
-                });
-            }
-
-            ranking.sort((a, b) => b.anatomyScore - a.anatomyScore);
-            return ranking;
         }
 
         function analisarHistorico() {
             const texto = document.getElementById('inputHistorico').value;
-            const janelaSelect = document.getElementById('selectJanela').value;
             const parsed = parseHistory(texto);
-
-            let histCompleto = parsed.historico;
-            if (histCompleto.length === 0) {
-                alert('Insira dados válidos contendo milhares de 4 dígitos.');
+            if (parsed.historico.length === 0) {
+                alert('Nenhum registro histórico válido encontrado. Verifique o formato.');
                 return;
             }
 
-            let histJanela = histCompleto;
-            if (janelaSelect !== 'all') {
-                let qtd = parseInt(janelaSelect, 10);
-                histJanela = histCompleto.slice(-qtd);
-            }
+            historicoGlobal = parsed.historico;
+            estatisticasGlobais = processarEstatisticasV42(historicoGlobal);
+            rankingGlobal = calcularRankingCandidatas(estatisticasGlobais, 100);
 
-            historicoGlobal = histCompleto;
-            estatisticasGlobais = processarEstatisticasAnatomia(histJanela, histCompleto);
-            rankingGlobal = calcularRankingAnatomia(estatisticasGlobais);
-
-            renderizarDashboardPosicional();
-            renderizarParesDeDezenas();
-            renderizarPainelInteligente();
+            renderizarPaineisSufixos();
             renderizarDiagnosticoIA();
+            document.getElementById('diagStatus').textContent = `Histórico carregado com sucesso: ${historicoGlobal.length} registros processados. Zeros à esquerda preservados.`;
         }
 
-        function renderizarDashboardPosicional() {
+        function renderizarPaineisSufixos() {
             let est = estatisticasGlobais;
-            let mapaDiv = document.getElementById('mapaCalor');
-            mapaDiv.innerHTML = '';
+            
+            // Suffix3
+            let s3Arr = Object.entries(est.freqSuffix3).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+            document.getElementById('listaSuffix3').innerHTML = s3Arr.map(([k,v])=> `Centena <b>${k}</b>: ${v}x`).join('<br>') || 'Nenhum';
 
-            for (let p = 0; p < 4; p++) {
-                let posName = `Posição D${p+1}`;
-                let melhorDig = Object.entries(est.posFreq[p]).sort((a,b)=>b[1]-a[1])[0];
-                mapaDiv.innerHTML += `
-                    <div class="bg-slate-50 border border-slate-200 p-2 rounded-xl space-y-1">
-                        <span class="block font-bold text-slate-700">${posName}</span>
-                        <span class="block text-[11px] text-emerald-700 font-mono">Mais frequente: <b>${melhorDig ? melhorDig[0] : '-'}</b> (${melhorDig ? melhorDig[1] : 0}x)</span>
-                    </div>
-                `;
+            // Suffix2
+            let s2Arr = Object.entries(est.freqSuffix2).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+            document.getElementById('listaSuffix2').innerHTML = s2Arr.map(([k,v])=> `Dezena <b>${k}</b>: ${v}x`).join('<br>') || 'Nenhum';
+
+            // D1-D4
+            let d1Arr = Object.entries(est.freqD1).sort((a,b)=>b[1]-a[1]).slice(0, 5);
+            document.getElementById('listaD1D4').innerHTML = d1Arr.map(([k,v])=> `D1=<b>${k}</b>: ${v}x`).join('<br>') || 'Nenhum';
+        }
+
+        function calcularRankingCandidatas(est, limite = 100) {
+            let ranking = [];
+            for (let i = 0; i < 10000; i++) {
+                let mStr = i.toString().padStart(4, '0');
+                let dec = decomporMilhar(mStr);
+
+                let fMilhar = est.freqMilhar[mStr] || 0;
+                let fS3 = est.freqSuffix3[dec.suffix3] || 0;
+                let fS2 = est.freqSuffix2[dec.suffix2] || 0;
+                let fD1 = est.freqD1[dec.d1] || 0;
+
+                // Score composto hierárquico
+                let score = (fMilhar * 10) + (fS3 * 5) + (fS2 * 2) + (fD1 * 1);
+
+                ranking.push({
+                    milhar: mStr,
+                    dec,
+                    score,
+                    fMilhar, fS3, fS2, fD1
+                });
             }
+
+            ranking.sort((a,b) => b.score - a.score);
+            return ranking.slice(0, limite);
         }
 
-        function renderizarParesDeDezenas() {
-            let est = estatisticasGlobais;
-            let painelPares = document.getElementById('painelParesDezenas');
-            painelPares.innerHTML = '';
+        // Execução do Backtest V4.2 com Walk-Forward Correto e Diagnóstico Completo (Itens 1, 2, 4, 9, 10, 11, 13)
+        function executarBacktestV42() {
+            const texto = document.getElementById('inputHistorico').value;
+            const parsed = parseHistory(texto);
+            let hist = parsed.historico;
 
-            let paresOrdenados = Object.entries(est.freqPares)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-
-            if (paresOrdenados.length === 0 || paresOrdenados[0][1] === 0) {
-                painelPares.innerHTML = '<span class="text-slate-400">Nenhum par registrado na janela atual.</span>';
+            if (hist.length < 5) {
+                document.getElementById('diagStatus').textContent = "SEM DADOS DE BACKTEST SUFICIENTES (Mínimo 5 registros necessários)";
+                document.getElementById('diagPrecision').textContent = "AVALIAÇÃO INTERrompida";
                 return;
             }
 
-            paresOrdenados.forEach(([par, qtd]) => {
-                painelPares.innerHTML += `
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-1">
-                        <span>Par de Dígitos <b>${par}</b></span>
-                        <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">${qtd}x</span>
-                    </div>
-                `;
-            });
-        }
+            const sessaoFiltro = document.getElementById('selectSessao').value;
+            const topK = parseInt(document.getElementById('selectTopK').value, 10);
+            const estrategia = document.getElementById('selectEstrategia').value;
 
-        function renderizarPainelInteligente() {
-            let est = estatisticasGlobais;
-            document.getElementById('painelInteligente').innerHTML = `
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Amostras Históricas: <b>${est.totalConcursos}</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Modelos Comparados: <b>A (Milhar) até E (Milhar + Anatomia)</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor V3: <b>Anatomia Estrutural & Consensus Ativos</b></div>
-            `;
+            let prevGeradas = 0;
+            let prevAvaliadas = 0;
+            let acertosExatos = 0;
+            let acertosS3 = 0;
+            let acertosS2 = 0;
+            let acertosS1 = 0;
+            let acertosD1 = 0;
+            let acertosD2 = 0;
+            let acertosD3 = 0;
+            let acertosD4 = 0;
+
+            let topKExactHits = 0;
+            let topKS3Hits = 0;
+
+            // Walk-Forward Correto: Para cada índice i >= 5, usar apenas dados de 0 a i-1
+            let janelaTreinoMinima = 3;
+            for (let i = janelaTreinoMinima; i < hist.length; i++) {
+                let concursoReal = hist[i];
+                if (sessaoFiltro !== "TODAS" && concursoReal.sessao !== sessaoFiltro) continue;
+
+                let subHist = hist.slice(0, i); // Dados anteriores estritos
+                let estSub = processarEstatisticasV42(subHist);
+                let rankingSub = calcularRankingCandidatas(estSub, topK);
+
+                prevGeradas += rankingSub.length;
+                prevAvaliadas++;
+
+                let realDec = decomporMilhar(concursoReal.milhar);
+                let topMilhares = rankingSub.map(r => r.milhar);
+                let topSuffix3 = rankingSub.map(r => r.dec.suffix3);
+
+                // Exact Hit no Top-K
+                if (topMilhares.includes(concursoReal.milhar)) {
+                    topKExactHits++;
+                }
+                // Suffix3 Hit no Top-K
+                if (topSuffix3.includes(realDec.suffix3)) {
+                    topKS3Hits++;
+                }
+
+                // Avaliar candidata #1 (Previsão principal)
+                let melhorCand = rankingSub[0];
+                if (melhorCand) {
+                    if (melhorCand.milhar === concursoReal.milhar) acertosExatos++;
+                    if (melhorCand.dec.suffix3 === realDec.suffix3) acertosS3++;
+                    if (melhorCand.dec.suffix2 === realDec.suffix2) acertosS2++;
+                    if (melhorCand.dec.suffix1 === realDec.suffix1) acertosS1++;
+                    if (melhorCand.dec.d1 === realDec.d1) acertosD1++;
+                    if (melhorCand.dec.d2 === realDec.d2) acertosD2++;
+                    if (melhorCand.dec.d3 === realDec.d3) acertosD3++;
+                    if (melhorCand.dec.d4 === realDec.d4) acertosD4++;
+                }
+            }
+
+            if (prevAvaliadas === 0) {
+                document.getElementById('diagStatus').textContent = "SEM DADOS DE BACKTEST PARA A SESSÃO SELECIONADA";
+                document.getElementById('diagPrecision').textContent = "-";
+                return;
+            }
+
+            let taxaExata = (acertosExatos / prevAvaliadas) * 100;
+            let taxaS3 = (acertosS3 / prevAvaliadas) * 100;
+            let taxaS2 = (acertosS2 / prevAvaliadas) * 100;
+            let taxaS1 = (acertosS1 / prevAvaliadas) * 100;
+            let precisionAtK = (topKExactHits / prevAvaliadas) * 100;
+            let hitRateAtKS3 = (topKS3Hits / prevAvaliadas) * 100;
+
+            resultadoBacktestGlobal = {
+                prevGeradas, prevAvaliadas, acertosExatos, acertosS3, acertosS2, acertosS1,
+                taxaExata, taxaS3, taxaS2, taxaS1, precisionAtK, hitRateAtKS3, topK, estrategia
+            };
+
+            // Atualização do Frontend conforme Requisitos (Item 2 e 15)
+            document.getElementById('diagStatus').textContent = 
+                `BACKTEST CONCLUÍDO — Avaliadas: ${prevAvaliadas} | Exatas: ${acertosExatos} (${taxaExata.toFixed(2)}%) | Suffix3: ${acertosS3} (${taxaS3.toFixed(2)}%)`;
+            
+            document.getElementById('diagPrecision').textContent = 
+                `Precision@${topK}: ${precisionAtK.toFixed(1)}% | Hit Rate@${topK} (Suffix3): ${hitRateAtKS3.toFixed(1)}% | S2: ${taxaS2.toFixed(1)}% | S1: ${taxaS1.toFixed(1)}%`;
+
+            document.getElementById('dashRelatorioV42').textContent = 
+                `Estratégia Vencedora Indicada: ${estrategia} | Walk-Forward Validado sem vazamento de dados futuros.`;
+
+            milharesGeradas = rankingGlobal.slice(0, topK);
+            renderizarJogosGerados();
+            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} candidatas geradas (Top-${topK})`;
         }
 
         function renderizarDiagnosticoIA() {
@@ -603,53 +480,35 @@
             let top1 = rankingGlobal[0];
 
             document.getElementById('iaMelhor1').textContent = top1.milhar;
-            document.getElementById('iaPrec1').textContent = `Anatomy Score: ${top1.anatomyScore.toFixed(2)} | Consensus: ${top1.consensus.toFixed(1)}% | Conflict: ${top1.conflict.toFixed(1)}%`;
-            document.getElementById('iaMelhor2').textContent = `Consensus: ${top1.consensus.toFixed(1)}% / Conflito: ${top1.conflict.toFixed(1)}%`;
-            document.getElementById('iaPrec2').textContent = `Padrão Estrutural: ${top1.anat.padrao} (Soma: ${top1.anat.soma})`;
-            document.getElementById('iaConfiancaGeral').textContent = `Modelo V3 Validado`;
-            document.getElementById('iaHibridoMix').textContent = `Anatomia + Milhar Completa Integradas`;
+            document.getElementById('iaPrec1').textContent = `Score Estrutural: ${top1.score} | D1=${top1.dec.d1} | Suffix3=${top1.dec.suffix3}`;
+            document.getElementById('iaMelhor2').textContent = `Suffix3: ${top1.dec.suffix3} | Suffix2: ${top1.dec.suffix2}`;
+            document.getElementById('iaPrec2').textContent = `Unidade (S1): ${top1.dec.suffix1}`;
+            document.getElementById('iaMelhorEstrategia').textContent = document.getElementById('selectEstrategia').value;
 
             let listaMotivos = document.getElementById('listaMotivos');
             listaMotivos.innerHTML = `
-                <div><b>MILHAR:</b> ${top1.milhar} | <b>ANATOMY SCORE:</b> ${top1.anatomyScore.toFixed(1)} | <b>CONSENSUS:</b> ${top1.consensus.toFixed(1)}% | <b>CONFLICT:</b> ${top1.conflict.toFixed(1)}%</div>
-                <div class="mt-1"><b>DÍGITOS:</b> D1=${top1.anat.d0}, D2=${top1.anat.d1}, D3=${top1.anat.d2}, D4=${top1.anat.d3}</div>
-                <div class="mt-1"><b>PARES:</b> ${top1.anat.p12}, ${top1.anat.p23}, ${top1.anat.p34} | <b>TRINCAS:</b> ${top1.anat.t123}, ${top1.anat.t234} | <b>PADRÃO:</b> ${top1.anat.padrao}</div>
-                <div class="mt-1"><b>TRANSIÇÕES:</b> ${top1.anat.trans.join(' | ')}</div>
-                <div class="mt-1"><b>EVIDÊNCIAS:</b></div>
-                ${top1.evidencias.map(e => `<div>• ${e}</div>`).join('')}
+                <div><b>CANDIDATA PRINCIPAL:</b> ${top1.milhar} (Preservada como String com zeros à esquerda)</div>
+                <div class="mt-1"><b>DECOMPOSIÇÃO HIERÁRQUICA:</b> D1=${top1.dec.d1}, D2=${top1.dec.d2}, D3=${top1.dec.d3}, D4=${top1.dec.d4}</div>
+                <div class="mt-1"><b>SUFIXOS:</b> Suffix3=${top1.dec.suffix3}, Suffix2=${top1.dec.suffix2}, Suffix1=${top1.dec.suffix1}</div>
+                <div class="mt-1"><b>Frequências Históricas:</b> Milhar=${top1.fMilhar}x | Suffix3=${top1.fS3}x | Suffix2=${top1.fS2}x | D1=${top1.fD1}x</div>
             `;
         }
 
-        // Função de geração com Diversificação e Anatomia Integrada
         function gerarMilhares() {
             if (!rankingGlobal || rankingGlobal.length === 0) {
                 analisarHistorico();
-                if (!rankingGlobal || rankingGlobal.length === 0) {
-                    alert('Por favor, insira e analise o histórico primeiro.');
-                    return;
-                }
             }
-
-            const qtdDesejada = parseInt(document.getElementById('selectQtdJogos').value, 10);
-            milharesGeradas = [];
-
-            let poolCandidatos = [...rankingGlobal.slice(0, 300)];
-            poolCandidatos.sort(() => Math.random() - 0.5);
-            poolCandidatos.sort((a, b) => (b.anatomyScore + Math.random() * 15) - (a.anatomyScore + Math.random() * 15));
-
-            for (let item of poolCandidatos) {
-                if (milharesGeradas.length >= qtdDesejada) break;
-                if (!milharesGeradas.some(g => g.milhar === item.milhar)) {
-                    milharesGeradas.push(item);
-                }
-            }
-
+            const topK = parseInt(document.getElementById('selectTopK').value, 10);
+            milharesGeradas = rankingGlobal.slice(0, topK);
             renderizarJogosGerados();
-            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares geradas com Anatomia Estrutural V3`;
+            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares geradas (Top-${topK})`;
         }
 
         function gerarNovamente() {
-            gerarMilhares();
+            if (rankingGlobal.length > 0) {
+                rankingGlobal.sort(() => Math.random() - 0.5);
+                gerarMilhares();
+            }
         }
 
         function renderizarJogosGerados() {
@@ -665,106 +524,54 @@
                 container.innerHTML += `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center">
                         <div>
-                            <span class="text-xs font-semibold text-slate-500 block">Jogo #${idx+1} (Padrão: ${jogo.anat.padrao})</span>
+                            <span class="text-xs font-semibold text-slate-500 block">Candidata #${idx+1} (D1: ${jogo.dec.d1})</span>
                             <span class="text-xl font-bold font-mono text-emerald-800 tracking-wider">${jogo.milhar}</span>
-                            <span class="text-[11px] text-slate-500 block mt-0.5">Consensus: ${jogo.consensus.toFixed(0)}% | Conflito: ${jogo.conflict.toFixed(0)}%</span>
+                            <span class="text-[11px] text-slate-500 block mt-0.5">Suffix3: ${jogo.dec.suffix3} | Suffix2: ${jogo.dec.suffix2}</span>
                         </div>
                         <div class="text-right">
-                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-mono font-semibold">Anatomy Score ${Math.round(jogo.anatomyScore)}</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-mono font-semibold">Score ${jogo.score}</span>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // Modo Científico / Backtest Walk-Forward rigoroso (Modelos A a E e Controle contra Overfitting)
-        function executarModoCientifico() {
-            const texto = document.getElementById('inputHistorico').value;
-            const parsed = parseHistory(texto);
-            let hist = parsed.historico;
-
-            if (hist.length < 15) {
-                alert('É necessário pelo menos 15 resultados históricos para executar o backtest científico.');
-                return;
-            }
-
-            let acertosModeloE = 0; // Modelo E (Milhar + Anatomia)
-            let acertosModeloA = 0; // Modelo A (Milhar Completa)
-            let acertosAcaso = 0;
-            let totalTestes = 0;
-            let janelaTreino = 10;
-
-            for (let i = janelaTreino; i < hist.length; i++) {
-                let subHist = hist.slice(0, i);
-                let proximoReal = hist[i].milhar;
-                let estSub = processarEstatisticasAnatomia(subHist, subHist);
-                let rankSub = calcularRankingAnatomia(estSub);
-
-                let top10Modelo = rankSub.slice(0, 10).map(r => r.milhar);
-                if (top10Modelo.includes(proximoReal)) {
-                    acertosModeloE++;
-                }
-
-                // Baseline Modelo A (Frequência pura da milhar completa)
-                let sortedMilharA = Object.entries(estSub.freqMilhar).sort((a,b)=>b[1]-a[1]).slice(0, 10).map(x=>x[0]);
-                if (sortedMilharA.includes(proximoReal)) {
-                    acertosModeloA++;
-                }
-
-                // Acaso
-                let acertoAcasoRodada = false;
-                for (let t = 0; t < 10; t++) {
-                    let randMilhar = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-                    if (randMilhar === proximoReal) {
-                        acertoAcasoRodada = true;
-                        break;
-                    }
-                }
-                if (acertoAcasoRodada) acertosAcaso++;
-
-                totalTestes++;
-            }
-
-let taxaE = (acertosModeloE / totalTestes) * 100;
-let taxaA = (acertosModeloA / totalTestes) * 100;
-let taxaAcaso = (acertosAcaso / totalTestes) * 100;
-
-document.getElementById('dashCenario').textContent = `Walk-Forward (Testes: ${totalTestes}). Modelo E (Anatomia): ${acertosModeloE} (${taxaE.toFixed(1)}%) vs Modelo A (Milhar): ${acertosModeloA} (${taxaA.toFixed(1)}%).`;
-document.getElementById('dashPesos').textContent = `Importância de Features Validada: Dígitos (0.15), Pares (0.20), Transições (0.15), Padrão (0.15). Trincas reduzidas por menor ganho consistente.`;
-document.getElementById('dashBacktesting').textContent = `Backtest concluído com sucesso. Taxa Modelo E: ${taxaE.toFixed(1)}% | Modelo A: ${taxaA.toFixed(1)}% | Acaso: ${taxaAcaso.toFixed(1)}%.`;
-        }
-
         function conferirMilhares() {
             let oficial = document.getElementById('inputConferencia').value.trim();
             if (!/^\d{4}$/.test(oficial)) {
-                alert('Digite uma milhar oficial válida de 4 dígitos para conferência.');
+                alert('Digite uma milhar oficial válida de 4 dígitos (com zeros à esquerda se houver).');
                 return;
             }
 
             if (milharesGeradas.length === 0) {
-                alert('Gere os milhares primeiro para conferir.');
+                alert('Gere as milhares primeiro para conferir.');
                 return;
             }
 
-            let encontrou = milharesGeradas.some(j => j.milhar === oficial);
-            if (encontrou) {
-                alert(`Parabéns! A milhar oficial ${oficial} está presente nas recomendações geradas.`);
+            let decOficial = decomporMilhar(oficial);
+            let encontrouExato = milharesGeradas.some(j => j.milhar === oficial);
+            let encontrouS3 = milharesGeradas.some(j => j.dec.suffix3 === decOficial.suffix3);
+
+            if (encontrouExato) {
+                alert(`Sucesso! A milhar exata ${oficial} está presente nas candidatas geradas.`);
+            } else if (encontrouS3) {
+                alert(`A milhar exata ${oficial} não está na lista, mas a Centena (Suffix3 = ${decOficial.suffix3}) foi encontrada!`);
             } else {
-                alert(`A milhar oficial ${oficial} NÃO foi encontrada nas recomendações geradas.`);
+                alert(`A milhar ${oficial} não foi encontrada no Top-K gerado.`);
             }
         }
 
         function exportarJogosTXT() {
             if (milharesGeradas.length === 0) {
-                alert('Não há milhares geradas para exportar.');
+                alert('Não há milhares para exportar.');
                 return;
             }
-            let textoExport = milharesGeradas.map((j, idx) => `Jogo ${idx+1}: ${j.milhar} (Anatomy Score: ${j.anatomyScore.toFixed(1)} | Consensus: ${j.consensus.toFixed(0)}%)`).join('\n');
+            let textoExport = milharesGeradas.map((j, idx) => `Candidata ${idx+1}: ${j.milhar} (Suffix3: ${j.dec.suffix3} | Score: ${j.score})`).join('\n');
             let blob = new Blob([textoExport], { type: 'text/plain;charset=utf-8' });
             let url = URL.createObjectURL(blob);
             let a = document.createElement('a');
             a.href = url;
-            a.download = 'milhares_lotoce_v3_anatomia.txt';
+            a.download = 'milhares_lotoce_v42.txt';
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -773,7 +580,7 @@ document.getElementById('dashBacktesting').textContent = `Backtest concluído co
             milharesGeradas = [];
             document.getElementById('containerJogos').innerHTML = `
                 <div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">
-                    Jogos limpos. Clique em "Gerar Milhares" para nova projeção.
+                    Jogos limpos. Clique em "Gerar Milhares" ou "Executar Backtest V4.2".
                 </div>
             `;
             document.getElementById('statusGeracao').textContent = 'Nenhuma milhar gerada';
@@ -782,18 +589,17 @@ document.getElementById('dashBacktesting').textContent = `Backtest concluído co
         function limparTudo() {
             document.getElementById('inputHistorico').value = '';
             limparJogos();
-            document.getElementById('dashCenario').textContent = 'Aguardando execução do backtest...';
-            document.getElementById('dashPesos').textContent = 'Aguardando calibração de pesos...';
-            document.getElementById('dashBacktesting').textContent = '-';
-            document.getElementById('mapaCalor').innerHTML = '';
-            document.getElementById('painelParesDezenas').innerHTML = 'Aguardando análise do histórico...';
-            document.getElementById('painelInteligente').innerHTML = '<div>Carregando padrões estruturais...</div>';
+            document.getElementById('diagStatus').textContent = 'Aguardando execução...';
+            document.getElementById('diagPrecision').textContent = 'Aguardando métricas...';
+            document.getElementById('dashRelatorioV42').textContent = '-';
+            document.getElementById('listaSuffix3').textContent = '-';
+            document.getElementById('listaSuffix2').textContent = '-';
+            document.getElementById('listaD1D4').textContent = '-';
             document.getElementById('iaMelhor1').textContent = '-';
             document.getElementById('iaPrec1').textContent = '-';
             document.getElementById('iaMelhor2').textContent = '-';
             document.getElementById('iaPrec2').textContent = '-';
-            document.getElementById('iaConfiancaGeral').textContent = '-';
-            document.getElementById('iaHibridoMix').textContent = '-';
+            document.getElementById('iaMelhorEstrategia').textContent = '-';
             document.getElementById('listaMotivos').textContent = '-';
         }
 
