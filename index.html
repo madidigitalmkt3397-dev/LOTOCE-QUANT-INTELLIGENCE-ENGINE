@@ -205,7 +205,6 @@
             linha = linha.trim();
             if (!linha) return null;
             let partes = linha.split(/[,;\t]+/).map(p => p.trim()).filter(Boolean);
-            // Procura por um número de 1 a 10 na linha
             let milhar = null;
             for (let p of partes) {
                 let num = parseInt(p, 10);
@@ -314,8 +313,6 @@
 
         function renderizarDashboard() {
             let est = estatisticasGlobais;
-            let cenario = classificarCenario(est);
-
             document.getElementById('dashCenario').innerHTML = `Status: Ativo<br>Total analisado: ${est.totalConcursos} sorteios`;
             document.getElementById('dashPesos').innerHTML = `Modelo Ponderado: Freq + Atraso`;
             document.getElementById('dashBacktesting').textContent = `Último milhar sorteado: ${est.ultimoSorteio || '-'}`;
@@ -383,16 +380,16 @@
         }
 
         function gerarJogos() {
-            if (!estatisticasGlobais.perfisDezenas) {
+            if (!estatisticasGlobais || !estatisticasGlobais.perfisDezenas) {
                 analisarHistorico();
             }
-            let qtd = parseInt(document.getElementById('selectQtdJogos').value, 10) || 5;
+            let qtd = parseInt(document.getElementById('selectQtdJogos').value, 10) || 3;
             let est = estatisticasGlobais;
 
             let scored = [];
             for (let i = 1; i <= 10; i++) {
                 let p = est.perfisDezenas[i];
-                let score = parseFloat(p.freq) + (p.atrasoAtual * 2) + (Math.random() * 5);
+                let score = parseFloat(p.freq) + (p.atrasoAtual * 2) + (Math.random() * 2);
                 scored.push({ milhar: i, score, ...p });
             }
             scored.sort((a, b) => b.score - a.score);
@@ -430,7 +427,7 @@
                 alert('Informe um resultado oficial válido entre 1 e 10.');
                 return;
             }
-            if (!estrategiasGeradas.selecionadas) {
+            if (!estrategiasGeradas.selecionadas || estrategiasGeradas.selecionadas.length === 0) {
                 alert('Gere as opções primeiro antes de conferir.');
                 return;
             }
@@ -439,7 +436,7 @@
         }
 
         function exportarJogosTXT() {
-            if (!estrategiasGeradas.selecionadas) {
+            if (!estrategiasGeradas.selecionadas || estrategiasGeradas.selecionadas.length === 0) {
                 alert('Nenhuma opção gerada para exportar.');
                 return;
             }
@@ -454,6 +451,7 @@
         function limparJogos() {
             document.getElementById('containerJogos').innerHTML = '<div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">Jogos limpos.</div>';
             document.getElementById('statusGeracao').textContent = 'Nenhuma opção gerada';
+            estrategiasGeradas = {};
         }
 
         function limparTudo() {
@@ -464,7 +462,6 @@
             document.getElementById('dashBacktesting').textContent = '-';
         }
 
-        // Executa análise inicial ao carregar
         window.onload = function() {
             analisarHistorico();
         };
