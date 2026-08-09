@@ -96,7 +96,7 @@
                         <span id="dashBacktesting" class="text-slate-600 block">-</span>
                     </div>
                     <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg text-[11px] font-mono">
-                        Motor V2 com Features Posicionais, Estruturais e Pares de Dezenas Ativo
+                        Motor V2 com Predição Preditiva, Co-ocorrência e Diversificação Ativo
                     </div>
                 </div>
 
@@ -203,18 +203,18 @@
         let milharesGeradas = [];
         let rankingGlobal = [];
 
-        // Pesos otimizados V2 (incorporando pares de dezenas e mantendo equilíbrio)
+        // Pesos otimizados V2 (Reduzindo frequência histórica pura, aumentando atraso e pares de dezenas)
         const PESOS_SCORE = {
-            frequenciaHistorica: 0.12,
-            frequenciaRecente: 0.15,
-            unidade: 0.06,
+            frequenciaHistorica: 0.05,
+            frequenciaRecente: 0.10,
+            unidade: 0.05,
             dezena: 0.08,
-            centena: 0.06,
-            recencia: 0.08,
-            tendencia: 0.05,
+            centena: 0.05,
+            recencia: 0.22,      // Atraso otimizado para predição
+            tendencia: 0.10,
             posicional: 0.10,
-            estrutural: 0.10,
-            parDezenas: 0.20
+            estrutural: 0.05,
+            parDezenas: 0.20     // Forte peso para pares frontais e traseiros combinados
         };
 
         function parseLine(linha) {
@@ -261,7 +261,7 @@
             let paridadeStr = `${d0%2===0?'P':'I'}-${d1%2===0?'P':'I'}-${d2%2===0?'P':'I'}-${d3%2===0?'P':'I'}`;
             
             let temSequencia = (d1 === (d0+1)%10 && d2 === (d1+1)%10 && d3 === (d2+1)%10) ||
-                               (d1 === (d0-1+10)%10 && d2 === (d1-1+10)%10 && d3 === (d2-1+10)%10);
+                             (d1 === (d0-1+10)%10 && d2 === (d1-1+10)%10 && d3 === (d2-1+10)%10);
 
             let baixoAlto = (d0 <= 4 ? 'B' : 'A') + (d1 <= 4 ? 'B' : 'A') + (d2 <= 4 ? 'B' : 'A') + (d3 <= 4 ? 'B' : 'A');
 
@@ -425,7 +425,7 @@
                 let scoreTraseira = (est.freqTraseira[dezTraseira] / est.maxTraseira) * 100;
                 let coOcorrCount = est.coOcorrenciaPares[`${dezFrontal}|${dezTraseira}`] || 0;
                 let scoreCoOcorr = (coOcorrCount / est.maxCoOcorr) * 100;
-                let valParDezenas = (scoreFrontal + scoreTraseira + (scoreCoOcorr * 2)) / 4;
+                let valParDezenas = (scoreFrontal + scoreTraseira + (scoreCoOcorr * 3)) / 5;
 
                 // Score posicional (média das 4 posições)
                 let posScoreSum = 0;
@@ -441,8 +441,11 @@
                 let valEstrutural = (estrutFreq / est.maxEstrutura) * 100;
                 if (feat.temSequencia) valEstrutural += 10;
 
+                // Preditividade baseada em atraso ideal (Poisson/Gambler's decay adaptado)
                 let atraso = est.atrasoAtual[mStr];
-                let recScore = Math.max(0, 100 - (Math.abs(atraso - (tamanhoTotal / 10)) * 2));
+                // Premia atrasos moderados/altos (janela ótima de maturação)
+                let recScore = Math.min(100, (atraso / Math.max(10, tamanhoTotal * 0.1)) * 100);
+                if (atraso > tamanhoTotal * 0.8) recScore *= 0.8; // Penaliza atraso excessivo irreal
 
                 let taxaRecente = est.freqRecMap[mStr] / tamanhoJanela;
                 let taxaHistorica = est.freqHistMap[mStr] / tamanhoTotal;
@@ -565,8 +568,8 @@
             let est = estatisticasGlobais;
             document.getElementById('painelInteligente').innerHTML = `
                 <div class="p-3 bg-white border border-slate-200 rounded-lg">Amostras Históricas: <b>${est.totalConcursos}</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Features Ativas: <b>Posicional + Estrutural + Pares de Dezenas</b></div>
-                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor V2: <b>Score Ponderado Multidimensional com Co-ocorrência</b></div>
+                <div class="p-3 bg-white border border-slate-200 rounded-lg">Features Ativas: <b>Posicional + Co-ocorrência de Pares</b></div>
+                <div class="p-3 bg-white border border-slate-200 rounded-lg">Motor V2: <b>Preditivo com Diversificação Controlada</b></div>
             `;
         }
 
@@ -579,141 +582,152 @@
             document.getElementById('iaPrec1').textContent = `Score V2: ${top1.score.toFixed(2)} | Posicional: ${top1.componentes.posicional} | Pares Dez.: ${top1.componentes.parDezenas}`;
             document.getElementById('iaMelhor2').textContent = `Paridade: ${featTop1.paridadeStr} (Soma: ${featTop1.soma})`;
             document.getElementById('iaPrec2').textContent = `Dígitos distintos: ${featTop1.digitosUnicos}`;
-            document.getElementById('iaConfiancaGeral').textContent = `Modelo V2 Ativo`;
-            document.getElementById('iaHibridoMix').textContent = `Diagnóstico por Ranking Real`;
+            document.getElementById('iaConfiancaGeral').textContent = `Modelo Preditivo Ativo`;
+            document.getElementById('iaHibridoMix').textContent = `Diversificação e Co-ocorrência Balanceadas`;
 
-            let motivosHtml = Object.entries(top1.componentes).map(([k, v]) => `<div>• ${k.toUpperCase()}: ${v} pts</div>`).join('');
-            document.getElementById('listaMotivos').innerHTML = motivosHtml;
+            let listaMotivos = document.getElementById('listaMotivos');
+            listaMotivos.innerHTML = top1.motivos.map(m => `<div>• ${m}</div>`).join('');
         }
 
+        // Função de geração com Diversificação e Aleatoriedade Controlada
         function gerarMilhares() {
             if (!rankingGlobal || rankingGlobal.length === 0) {
                 analisarHistorico();
-            }
-            let qtdDesejada = parseInt(document.getElementById('selectQtdJogos').value, 10) || 5;
-            
-            let selecionadas = [];
-            let terminaçõesUsadas = new Set();
-            let centenasUsadas = new Set();
-
-            for (let item of rankingGlobal) {
-                if (selecionadas.length >= qtdDesejada) break;
-                let term = item.milhar.slice(-1);
-                let cent = item.milhar.slice(-3);
-
-                if (!terminaçõesUsadas.has(term) || !centenasUsadas.has(cent) || selecionadas.length < (qtdDesejada / 2)) {
-                    selecionadas.push(item);
-                    terminaçõesUsadas.add(term);
-                    centenasUsadas.add(cent);
+                if (!rankingGlobal || rankingGlobal.length === 0) {
+                    alert('Por favor, insira e analise o histórico primeiro.');
+                    return;
                 }
             }
 
-            if (selecionadas.length < qtdDesejada) {
+            const qtdDesejada = parseInt(document.getElementById('selectQtdJogos').value, 10);
+            milharesGeradas = [];
+
+            // Seleção diversificada para evitar sempre as mesmas milhares do topo
+            let poolCandidatos = [...rankingGlobal.slice(0, 300)]; // Top 300
+            let dezenasFrontaisUsadas = new Set();
+            let dezenasTraseirasUsadas = new Set();
+
+            // Embaralha levemente para introduzir aleatoriedade controlada
+            poolCandidatos.sort(() => Math.random() - 0.5);
+            // Reordena parcialmente mantendo peso do score mas permitindo variação
+            poolCandidatos.sort((a, b) => (b.score + Math.random() * 15) - (a.score + Math.random() * 15));
+
+            for (let item of poolCandidatos) {
+                if (milharesGeradas.length >= qtdDesejada) break;
+                let frontal = item.milhar.slice(0, 2);
+                let traseira = item.milhar.slice(2, 4);
+
+                // Evita repetir dezenas frontais ou traseiras em excesso para garantir diversidade
+                if (!dezenasFrontaisUsadas.has(frontal) || !dezenasTraseirasUsadas.has(traseira) || milharesGeradas.length < qtdDesejada / 2) {
+                    milharesGeradas.push(item);
+                    dezenasFrontaisUsadas.add(frontal);
+                    dezenasTraseirasUsadas.add(traseira);
+                }
+            }
+
+            // Se faltou completar devido aos filtros restritos, completa com os melhores restantes
+            if (milharesGeradas.length < qtdDesejada) {
                 for (let item of rankingGlobal) {
-                    if (selecionadas.length >= qtdDesejada) break;
-                    if (!selecionadas.includes(item)) {
-                        selecionadas.push(item);
+                    if (milharesGeradas.length >= qtdDesejada) break;
+                    if (!milharesGeradas.some(g => g.milhar === item.milhar)) {
+                        milharesGeradas.push(item);
                     }
                 }
             }
 
-            milharesGeradas = selecionadas;
-
-            let container = document.getElementById('containerJogos');
-            container.innerHTML = '';
-
-            milharesGeradas.forEach((item, idx) => {
-                let comp = item.componentes;
-                container.innerHTML += `
-                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2 shadow-sm">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-emerald-600 font-semibold">Projeção V2 0${idx + 1}</span>
-                            <span class="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Score: ${item.score.toFixed(1)}</span>
-                        </div>
-                        <div class="text-3xl font-extrabold text-slate-800 font-mono tracking-wider text-center">${item.milhar}</div>
-                        <div class="grid grid-cols-4 gap-1 text-[10px] text-slate-600 font-mono bg-white p-2 rounded border border-slate-200 text-center">
-                            <div>Rec: <b>${comp.recencia}</b></div>
-                            <div>Pos: <b>${comp.posicional}</b></div>
-                            <div>P.Dez: <b>${comp.parDezenas}</b></div>
-                            <div>Estr: <b>${comp.estrutural}</b></div>
-                        </div>
-                        <div class="text-[11px] text-slate-500 font-mono">${item.motivos.join(' | ')}</div>
-                    </div>
-                `;
-            });
-
-            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares geradas com sucesso.`;
-        }
-
-        function executarModoCientifico() {
-            analisarHistorico();
-            if (historicoGlobal.length < 5) {
-                alert('Histórico muito curto para backtest walk-forward confiável.');
-                return;
-            }
-            let acertos = 0;
-            let totalTestes = Math.min(20, historicoGlobal.length - 4);
-            
-            for (let t = 0; t < totalTestes; t++) {
-                let corteIdx = historicoGlobal.length - totalTestes + t;
-                let subHist = historicoGlobal.slice(0, corteIdx);
-                let proximoReal = historicoGlobal[corteIdx];
-
-                let estSub = processarEstatisticas(subHist, subHist);
-                let rankSub = calcularScoreMilhares(estSub);
-
-                let top5 = rankSub.slice(0, 5).map(i => i.milhar);
-                if (top5.includes(proximoReal)) {
-                    acertos++;
-                }
-            }
-
-            let taxaAcerto = (acertos / totalTestes) * 100;
-            document.getElementById('dashCenario').textContent = `Backtest Walk-Forward executado em ${totalTestes} sorteios recentes.`;
-            document.getElementById('dashPesos').textContent = `Taxa de acerto do Top 5: ${taxaAcerto.toFixed(1)}% (${acertos}/${totalTestes})`;
-            document.getElementById('dashBacktesting').textContent = `Validação cruzada concluída com sucesso. Motor V2 operando com alta robustez estatística.`;
+            renderizarJogosGerados();
+            document.getElementById('statusGeracao').textContent = `${milharesGeradas.length} milhares geradas com diversificação V2`;
         }
 
         function gerarNovamente() {
             gerarMilhares();
         }
 
-        function exportarJogosTXT() {
+        function renderizarJogosGerados() {
+            let container = document.getElementById('containerJogos');
+            container.innerHTML = '';
+
             if (milharesGeradas.length === 0) {
-                alert('Nenhuma milhar gerada para exportar.');
+                container.innerHTML = '<div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">Nenhuma milhar gerada.</div>';
                 return;
             }
-            let textoExport = milharesGeradas.map(i => i.milhar).join('\n');
-            let blob = new Blob([textoExport], { type: 'text/plain;charset=utf-8' });
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = 'milhares_lotoce_v2.txt';
-            a.click();
+
+            milharesGeradas.forEach((jogo, idx) => {
+                let frontal = jogo.milhar.slice(0, 2);
+                let traseira = jogo.milhar.slice(2, 4);
+                container.innerHTML += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-500 block">Jogo #${idx+1}</span>
+                            <span class="text-xl font-bold font-mono text-emerald-800 tracking-wider">${jogo.milhar}</span>
+                            <span class="text-[11px] text-slate-500 block mt-0.5">Par: ${frontal} + ${traseira} | Score: ${jogo.score.toFixed(1)}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-mono font-semibold">Score ${Math.round(jogo.score)}</span>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
-        function limparJogos() {
-            milharesGeradas = [];
-            document.getElementById('containerJogos').innerHTML = `
-                <div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">
-                    Jogos limpos. Clique em "Gerar Milhares" para refazer as projeções.
-                </div>
-            `;
-            document.getElementById('statusGeracao').textContent = 'Nenhuma milhar gerada';
-        }
+        // Modo Científico / Backtest Walk-Forward honesto com comparativo ao Acaso
+        function executarModoCientifico() {
+            const texto = document.getElementById('inputHistorico').value;
+            const parsed = parseHistory(texto);
+            let hist = parsed.historico;
 
-        function limparTudo() {
-            document.getElementById('inputHistorico').value = '';
-            historicoGlobal = [];
-            estatisticasGlobais = {};
-            rankingGlobal = [];
-            limparJogos();
-            document.getElementById('dashCenario').textContent = 'Aguardando execução do backtest...';
-            document.getElementById('dashPesos').textContent = 'Aguardando avaliação comparativa...';
-            document.getElementById('dashBacktesting').textContent = '-';
-            document.getElementById('mapaCalor').innerHTML = '';
-            document.getElementById('painelParesDezenas').innerHTML = 'Aguardando análise do histórico...';
-            document.getElementById('painelInteligente').innerHTML = 'Carregando padrões estruturais...';
+            if (hist.length < 15) {
+                alert('É necessário pelo menos 15 resultados históricos para executar o backtest científico.');
+                return;
+            }
+
+            let acertosModelo = 0;
+            let acertosAcaso = 0;
+            let totalTestes = 0;
+            let janelaTreino = 10;
+
+            // Walk-forward testing
+            for (let i = janelaTreino; i < hist.length; i++) {
+                let subHist = hist.slice(0, i);
+                let proximoReal = hist[i];
+                let estSub = processarEstatisticas(subHist, subHist);
+                let rankSub = calcularScoreMilhares(estSub);
+
+                // Top 10 do modelo
+                let top10Modelo = rankSub.slice(0, 10).map(r => r.milhar);
+                if (top10Modelo.includes(proximoReal)) {
+                    acertosModelo++;
+                }
+
+                // Baseline Acaso (escolhe 10 aleatórias entre 0000 e 9999)
+                let acertoAcasoRodada = false;
+                for (let t = 0; t < 10; t++) {
+                    let randMilhar = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+                    if (randMilhar === proximoReal) {
+                        acertoAcasoRodada = true;
+                        break;
+                    }
+                }
+                if (acertoAcasoRodada) acertosAcaso++;
+
+                totalTestes++;
+            }
+
+            let taxaModelo = (acertosModelo / totalTestes) * 100;
+            let taxaAcaso = (acertosAcaso / totalTestes) * 100;
+            let vantagem = taxaModelo - taxaAcaso;
+
+            document.getElementById('dashCenario').textContent = `Testes Walk-Forward: ${totalTestes} sorteios avaliados. Acertos do Modelo (Top 10): ${acertosModelo} (${taxaModelo.toFixed(1)}%).`;
+            
+            let statusVantagem = "";
+            if (vantagem > 0) {
+                statusVantagem = `Vantagem real detectada de +${vantagem.toFixed(1)}% sobre o acaso.`;
+            } else {
+                statusVantagem = `Sem vantagem estatística clara sobre o acaso (${vantagem.toFixed(1)}%). O modelo comporta-se de forma similar à linha de base aleatória nesta amostra.`;
+            }
+
+            document.getElementById('dashPesos').textContent = `Baseline Acaso: ${acertosAcaso} (${taxaAcaso.toFixed(1)}%). ${statusVantagem}`;
+            document.getElementById('dashBacktesting').textContent = `Backtest concluído. Taxa do Modelo: ${taxaModelo.toFixed(1)}% vs Acaso: ${taxaAcaso.toFixed(1)}%.`;
         }
 
         function conferirMilhares() {
@@ -722,17 +736,66 @@
                 alert('Digite uma milhar oficial válida de 4 dígitos para conferência.');
                 return;
             }
+
             if (milharesGeradas.length === 0) {
-                alert('Gere milhares primeiro antes de conferir.');
+                alert('Gere os milhares primeiro para conferir.');
                 return;
             }
-            let encontrada = milharesGeradas.some(i => i.milhar === oficial);
-            if (encontrada) {
-                alert(`Parabéns! A milhar ${oficial} estava presente nas recomendações geradas.`);
+
+            let encontrou = milharesGeradas.some(j => j.milhar === oficial);
+            if (encontrou) {
+                alert(`Parabéns! A milhar oficial ${oficial} está presente nas recomendações geradas.`);
             } else {
-                alert(`A milhar ${oficial} não estava nas recomendações geradas desta vez.`);
+                alert(`A milhar oficial ${oficial} NÃO foi encontrada nas recomendações geradas.`);
             }
         }
+
+        function exportarJogosTXT() {
+            if (milharesGeradas.length === 0) {
+                alert('Não há milhares geradas para exportar.');
+                return;
+            }
+            let textoExport = milharesGeradas.map((j, idx) => `Jogo ${idx+1}: ${j.milhar} (Score: ${j.score.toFixed(1)})`).join('\n');
+            let blob = new Blob([textoExport], { type: 'text/plain;charset=utf-8' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'milhares_lotoce_v2.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function limparJogos() {
+            milharesGeradas = [];
+            document.getElementById('containerJogos').innerHTML = `
+                <div class="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl col-span-full text-sm">
+                    Jogos limpos. Clique em "Gerar Milhares" para nova projeção.
+                </div>
+            `;
+            document.getElementById('statusGeracao').textContent = 'Nenhuma milhar gerada';
+        }
+
+        function limparTudo() {
+            document.getElementById('inputHistorico').value = '';
+            limparJogos();
+            document.getElementById('dashCenario').textContent = 'Aguardando execução do backtest...';
+            document.getElementById('dashPesos').textContent = 'Aguardando avaliação comparativa...';
+            document.getElementById('dashBacktesting').textContent = '-';
+            document.getElementById('mapaCalor').innerHTML = '';
+            document.getElementById('painelParesDezenas').innerHTML = 'Aguardando análise do histórico...';
+            document.getElementById('painelInteligente').innerHTML = '<div>Carregando padrões estruturais...</div>';
+            document.getElementById('iaMelhor1').textContent = '-';
+            document.getElementById('iaPrec1').textContent = '-';
+            document.getElementById('iaMelhor2').textContent = '-';
+            document.getElementById('iaPrec2').textContent = '-';
+            document.getElementById('iaConfiancaGeral').textContent = '-';
+            document.getElementById('iaHibridoMix').textContent = '-';
+            document.getElementById('listaMotivos').textContent = '-';
+        }
+
+        window.onload = function() {
+            analisarHistorico();
+        };
     </script>
 </body>
 </html>
