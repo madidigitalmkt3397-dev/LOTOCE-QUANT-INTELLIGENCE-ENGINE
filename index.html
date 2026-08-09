@@ -3,272 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LotoCE Quant Intelligence — LQIP</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- SheetJS para leitura de planilhas Excel/CSV via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js para gráficos estatísticos via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Laboratório Estatístico - Lotoce</title>
+    <!-- Tailwind CSS para um design limpo e moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS para leitura de arquivos Excel no Front-End -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body>
-    <header class="site-header">
-        <div class="header-content">
-            <h1>LotoCE Quant Intelligence — LQIP</h1>
-            <p class="subtitle">Laboratório Estatístico e Motor de Análise da LotoCE (0000–9999)</p>
-        </div>
-        <div class="header-actions">
-            <button id="btn-export" class="btn btn-secondary">Exportar Previsões</button>
-            <button id="btn-clear-all" class="btn btn-danger">Limpar Tudo</button>
-        </div>
-    </header>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
 
-    <main class="main-container">
-        <!-- Seção de Entrada de Dados -->
-        <section class="card import-section">
-            <h2>1. Entrada e Importação de Dados</h2>
-            <div class="import-grid">
-                <div class="import-box">
-                    <h3>Importar Planilha</h3>
-                    <p>Envie arquivos .xlsx, .xls ou .csv com o histórico da LotoCE.</p>
-                    <input type="file" id="file-input" accept=".xlsx, .xls, .csv">
-                    <label for="file-input" class="btn btn-primary">Importar Excel / CSV</label>
-                </div>
-                <div class="import-box">
-                    <h3>Colagem Manual</h3>
-                    <p>Cole seus resultados abaixo (ex: 1234, 5678 ou com data e hora).</p>
-                    <textarea id="manual-input" placeholder="08/08/2026 14:00 - 1234&#10;1234, 5678, 9012&#10;3456"></textarea>
-                    <button id="btn-process-manual" class="btn btn-primary">Processar e Validar Dados</button>
-                </div>
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Cabeçalho -->
+        <header class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+            <h1 class="text-2xl md:text-3xl font-bold text-emerald-400 mb-2">🎲 Laboratório Estatístico - Lotoce</h1>
+            <p class="text-slate-400 text-sm md:text-base">
+                Carregue sua planilha com os resultados (Manhã, Tarde, Tarde II e Noite) para analisar padrões históricos e gerar 5 opções estudadas de milhares (1 a 10).
+            </p>
+        </header>
+
+        <!-- Seção de Upload -->
+        <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl space-y-4">
+            <label class="block text-sm font-semibold text-slate-300">Carregar Histórico (Excel / CSV)</label>
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" 
+                    class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-slate-950 hover:file:bg-emerald-400 cursor-pointer">
+                <button onclick="processarPlanilha()" 
+                    class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2 rounded-lg transition-all shadow-lg">
+                    Analisar Dados
+                </button>
             </div>
-            <div id="import-feedback" class="feedback-box hidden"></div>
+            <p id="statusMsg" class="text-xs text-slate-400">Nenhum arquivo carregado.</p>
         </section>
 
-        <!-- Dashboard de Indicadores Principais -->
-        <section id="dashboard-section" class="card dashboard-section hidden">
-            <h2>2. Dashboard e Cenário Estatístico Atual</h2>
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <h4>Concursos Analisados</h4>
-                    <span id="metric-total" class="metric-value">0</span>
+        <!-- Resultados e Recomendações -->
+        <section id="resultSection" class="hidden space-y-6">
+            <!-- Estatísticas Básicas -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Total de Sorteios</span>
+                    <p id="statTotal" class="text-2xl font-bold text-emerald-400">0</p>
                 </div>
-                <div class="metric-card">
-                    <h4>Registros Válidos</h4>
-                    <span id="metric-valid" class="metric-value">0</span>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Milhar Mais Frequente</span>
+                    <p id="statFrequent" class="text-2xl font-bold text-emerald-400">-</p>
                 </div>
-                <div class="metric-card">
-                    <h4>Registros Inválidos</h4>
-                    <span id="metric-invalid" class="metric-value">0</span>
-                </div>
-                <div class="metric-card">
-                    <h4>Janela de Análise</h4>
-                    <select id="window-select" class="select-control">
-                        <option value="10">Últimos 10</option>
-                        <option value="20">Últimos 20</option>
-                        <option value="50">Últimos 50</option>
-                        <option value="100">Últimos 100</option>
-                        <option value="200">Últimos 200</option>
-                        <option value="all" selected>Todos</option>
-                    </select>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Milhar Mais Atrasada</span>
+                    <p id="statDelayed" class="text-2xl font-bold text-emerald-400">-</p>
                 </div>
             </div>
 
-            <div class="scenario-panel">
-                <h3>Cenário Estatístico Atual</h3>
-                <div id="scenario-content" class="scenario-content">
-                    Carregando cenário...
+            <!-- As 5 Milhares Recomendadas -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl space-y-4">
+                <h2 class="text-xl font-bold text-emerald-400 border-b border-slate-700 pb-3">🎯 Top 5 Milhares Recomendadas (Estudo Estatístico)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4" id="recommendationsGrid">
+                    <!-- Preenchido via JavaScript -->
                 </div>
             </div>
         </section>
-
-        <!-- Abas de Navegação das Análises -->
-        <nav class="nav-tabs hidden" id="main-tabs">
-            <button class="tab-btn active" data-tab="tab-history">Histórico</button>
-            <button class="tab-btn" data-tab="tab-rankings">Rankings e Scores</button>
-            <button class="tab-btn" data-tab="tab-predictions">Gerador de Previsões</button>
-            <button class="tab-btn" data-tab="tab-backtest">Backtest Walk-Forward</button>
-            <button class="tab-btn" data-tab="tab-conferencia">Conferência</button>
-            <button class="tab-btn" data-tab="tab-map">Mapa e Detalhes</button>
-        </nav>
-
-        <!-- Conteúdo das Abas -->
-        <div class="tab-content-container">
-            <!-- Aba Histórico -->
-            <div id="tab-history" class="tab-pane active hidden">
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>Histórico de Resultados Validados</h2>
-                        <button id="btn-clear-history" class="btn btn-danger btn-sm">Limpar Histórico</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table id="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Data / Hora</th>
-                                    <th>Resultado (Milhar)</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Preenchido via app.js -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aba Rankings e Scores -->
-            <div id="tab-rankings" class="tab-pane hidden">
-                <div class="card">
-                    <h2>Ranking das Milhares (0000–9999)</h2>
-                    <div class="filter-row">
-                        <label>Filtrar Abordagem / Categoria:</label>
-                        <select id="ranking-filter" class="select-control">
-                            <option value="top">Top Estatístico (Melhor Score)</option>
-                            <option value="frequent">Mais Frequentes</option>
-                            <option value="delayed">Mais Atrasados</option>
-                            <option value="recent">Mais Recentes</option>
-                            <option value="trending">Em Tendência</option>
-                        </select>
-                    </div>
-                    <div class="table-responsive">
-                        <table id="ranking-table">
-                            <thead>
-                                <tr>
-                                    <th>Posição</th>
-                                    <th>Milhar</th>
-                                    <th>Score</th>
-                                    <th>Frequência</th>
-                                    <th>Atraso Atual</th>
-                                    <th>Recência</th>
-                                    <th>Tendência</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Preenchido via app.js -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aba Previsões -->
-            <div id="tab-predictions" class="tab-pane hidden">
-                <div class="card">
-                    <h2>Gerador de Possibilidades Estatísticas</h2>
-                    <div class="control-row">
-                        <div>
-                            <label>Quantidade de Previsões:</label>
-                            <select id="pred-count" class="select-control">
-                                <option value="10">10 Possibilidades</option>
-                                <option value="20" selected>20 Possibilidades</option>
-                                <option value="50">50 Possibilidades</option>
-                                <option value="100">100 Possibilidades</option>
-                            </select>
-                        </div>
-                        <button id="btn-generate-preds" class="btn btn-primary">Gerar Previsões</button>
-                    </div>
-                    <div id="recommendation-panel" class="recommendation-box">
-                        <!-- Painel de recomendação estatística atual -->
-                    </div>
-                    <div id="predictions-list" class="predictions-grid">
-                        <!-- Preenchido via app.js -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aba Backtest -->
-            <div id="tab-backtest" class="tab-pane hidden">
-                <div class="card">
-                    <h2>Backtest Walk-Forward (Sem Vazamento Temporal)</h2>
-                    <p>Testa o desempenho histórico das estratégias simulando previsões sem utilizar dados futuros.</p>
-                    <button id="btn-run-backtest" class="btn btn-primary">Executar Backtest</button>
-                    
-                    <div class="table-responsive" style="margin-top: 20px;">
-                        <table id="backtest-table">
-                            <thead>
-                                <tr>
-                                    <th>Estratégia</th>
-                                    <th>Testes</th>
-                                    <th>Média de Acerto</th>
-                                    <th>Melhor Resultado</th>
-                                    <th>Ocorrências</th>
-                                    <th>Score Global</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" style="text-align: center;">Execute o backtest para visualizar o desempenho histórico.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aba Conferência -->
-            <div id="tab-conferencia" class="tab-pane hidden">
-                <div class="card">
-                    <h2>Conferência de Resultado Oficial</h2>
-                    <p>Informe um resultado oficial de 4 dígitos para conferir se estava entre as previsões geradas.</p>
-                    <div class="control-row">
-                        <input type="text" id="conf-input" maxlength="4" placeholder="Ex: 4827" class="input-text">
-                        <button id="btn-conferir" class="btn btn-primary">Conferir Resultado</button>
-                    </div>
-                    <div id="conf-result" class="conf-result-box hidden">
-                        <!-- Resultado da conferência -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aba Mapa e Detalhes -->
-            <div id="tab-map" class="tab-pane hidden">
-                <div class="card">
-                    <h2>Perfil Detalhado da Milhar e Mapa de Calor</h2>
-                    <div class="control-row">
-                        <input type="text" id="detail-input" maxlength="4" placeholder="Milhar (ex: 4827)" class="input-text">
-                        <button id="btn-detail" class="btn btn-secondary">Consultar Milhar</button>
-                    </div>
-                    <div id="milhar-detail-box" class="milhar-detail-content hidden">
-                        <!-- Detalhes da milhar selecionada -->
-                    </div>
-
-                    <div style="margin-top: 30px;">
-                        <h3>Filtro de Distribuição (Top 100 Milhares)</h3>
-                        <div class="table-responsive">
-                            <table id="heatmap-table">
-                                <thead>
-                                    <tr>
-                                        <th>Milhar</th>
-                                        <th>Score</th>
-                                        <th>Frequência</th>
-                                        <th>Atraso</th>
-                                        <th>Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Preenchido via app.js -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal para registros inválidos -->
-    <div id="invalid-modal" class="modal hidden">
-        <div class="modal-content">
-            <span id="modal-close" class="modal-close">&times;</span>
-            <h2>Detalhes dos Registros</h2>
-            <div id="modal-body"></div>
-        </div>
     </div>
 
-    <footer class="site-footer">
-        <p>LotoCE Quant Intelligence — LQIP &copy; 2026. Análise estatística e quantitativa baseada em dados reais.</p>
-    </footer>
+    <script>
+        let dadosHistoricos = [];
 
-    <script src="app.js"></script>
+        function processarPlanilha() {
+            const fileInput = document.getElementById('excelFile');
+            const statusMsg = document.getElementById('statusMsg');
+
+            if (!fileInput.files.length) {
+                alert('Por favor, selecione um arquivo Excel ou CSV.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Pega a primeira planilha do arquivo
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Converte para JSON
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) {
+                        statusMsg.textContent = "A planilha parece estar vazia.";
+                        return;
+                    }
+
+                    dadosHistoricos = json;
+                    statusMsg.textContent = `Sucesso! ${json.length} registros carregados.`;
+                    
+                    analisarEGerarRecomendacoes();
+                    document.getElementById('resultSection').classList.remove('hidden');
+
+                } catch (error) {
+                    console.error(error);
+                    statusMsg.textContent = "Erro ao processar o arquivo. Verifique o formato.";
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function analisarEGerarRecomendacoes() {
+            // Supondo que a coluna com o número da milhar se chame algo como 'milhar', 'numero', 'resultado' ou seja a 2ª/3ª coluna.
+            // Vamos tentar varrer as chaves para achar valores numéricos de 1 a 10 ou dados de milhar.
+            const frequencias = {};
+            const ultimaOcorrencia = {};
+            
+            // Inicializa contadores de 1 a 10
+            for (let i = 1; i <= 10; i++) {
+                frequencias[i] = 0;
+                ultimaOcorrencia[i] = 999999; // Índice de atraso
+            }
+
+            let totalSorteios = dadosHistoricos.length;
+
+            dadosHistoricos.forEach((row, index) => {
+                // Tenta extrair o valor da milhar procurando em todas as chaves da linha por valores entre 1 e 10
+                Object.values(row).forEach(val => {
+                    const num = parseInt(val);
+                    if (num >= 1 && num <= 10) {
+                        frequencias[num] = (frequencias[num] || 0) + 1;
+                        // Guarda a distância do fim (atraso)
+                        const atraso = totalSorteios - 1 - index;
+                        if (atraso < (ultimaOcorrencia[num] || 999999)) {
+                            ultimaOcorrencia[num] = atraso;
+                        }
+                    }
+                });
+            });
+
+            // Identificar mais frequente e mais atrasada
+            let maisFreq = 1;
+            let maisAtrasada = 1;
+
+            for (let i = 2; i <= 10; i++) {
+                if (frequencias[i] > frequencias[maisFreq]) maisFreq = i;
+                if (ultimaOcorrencia[i] > ultimaOcorrencia[maisAtrasada]) maisAtrasada = i;
+            }
+
+            // Atualiza UI Estatísticas
+            document.getElementById('statTotal').textContent = totalSorteios;
+            document.getElementById('statFrequent').textContent = `Milhar ${maisFreq} (${frequencias[maisFreq]}x)`;
+            document.getElementById('statDelayed').textContent = `Milhar ${maisAtrasada} (${ultimaOcorrencia[maisAtrasada]} sorteios atrás)`;
+
+            // Lógica para gerar 5 opções estudadas (mix de frequência + equilíbrio de atraso)
+            // Criamos um score combinando frequência e atraso
+            let scored = [];
+            for (let i = 1; i <= 10; i++) {
+                let score = (frequencias[i] * 1.0) + (ultimaOcorrencia[i] * 0.5);
+                scored.push({ milhar: i, score: score, freq: frequencias[i], atraso: ultimaOcorrencia[i] });
+            }
+
+            // Ordena pelo score decrescente
+            scored.sort((a, b) => b.score - a.score);
+
+            // Pega as top 5
+            const top5 = scored.slice(0, 5);
+
+            // Renderiza na tela
+            const grid = document.getElementById('recommendationsGrid');
+            grid.innerHTML = '';
+
+            top5.forEach((item, idx) => {
+                grid.innerHTML += `
+                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-center space-y-2 shadow">
+                        <span class="text-xs text-emerald-400 font-semibold">Opção 0${idx + 1}</span>
+                        <div class="text-3xl font-extrabold text-white">Milhar ${item.milhar}</div>
+                        <div class="text-xs text-slate-400">Freq: ${item.freq} | Atraso: ${item.atraso} concursos</div>
+                    </div>
+                `;
+            });
+        }
+    </script>
 </body>
 </html>
