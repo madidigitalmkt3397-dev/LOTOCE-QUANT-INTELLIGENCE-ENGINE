@@ -275,7 +275,7 @@
                     <td class="p-2.5 font-bold text-emerald-600">${b.hitSuffix3Rate.toFixed(1)}%</td>
                     <td class="p-2.5">${b.hitMilharRate.toFixed(2)}%</td>
                     <td class="p-2.5">10.0% / 0.1%</td>
-                    <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] ${b.hitSuffix3Rate > 0.5 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${b.hitSuffix3Rate > 0.5 ? 'ESTÁVEL' / 'BAIXO SINAL'}</span></td>
+                    <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] ${b.hitSuffix3Rate > 0.5 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${b.hitSuffix3Rate > 0.5 ? 'ESTÁVEL' : 'BAIXO SINAL'}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
