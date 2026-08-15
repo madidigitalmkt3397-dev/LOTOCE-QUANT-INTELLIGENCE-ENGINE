@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratório Estatístico Lotofácil v4.2</title>
+    <title>Laboratório Estatístico Lotofácil v4.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -17,7 +17,7 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
             <div>
                 <h1 class="text-2xl font-black text-emerald-500">LABORATÓRIO ESTATÍSTICO <span class="text-white">LOTOFÁCIL</span></h1>
-                <p class="text-slate-500 text-sm">Motor Quantitativo de Descoberta de Padrões v4.2</p>
+                <p class="text-slate-500 text-sm">Motor Quantitativo de Descoberta de Padrões v4.3</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportarDadosEstado()" class="px-4 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs transition">Exportar JSON</button>
@@ -30,7 +30,7 @@
             <!-- Colagem manual -->
             <div class="space-y-3">
                 <label class="block text-xs font-bold text-slate-400">COLAR RESULTADOS (TEXTO / EXCEL / CSV)</label>
-                <textarea id="inputTextoDados" rows="4" placeholder="Cole os concursos ou os números sorteados (ex: 1, 2, 3... 25)..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
+                <textarea id="inputTextoDados" rows="4" placeholder="Cole os blocos com '1° PRÊMIO 2103', etc..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
                 <div class="flex justify-between items-center">
                     <span id="statusQtdDados" class="text-xs text-slate-500">0 registros carregados na memória</span>
                     <button onclick="processarDadosColados()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition">Processar Texto</button>
@@ -53,7 +53,7 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center text-[11px] text-slate-500">
-                    <span>Filtra automaticamente colunas de concursos/anos inválidos.</span>
+                    <span>Extrai estritamente os números de 4 dígitos dos prêmios.</span>
                     <span id="nomeArquivoCarregado" class="text-emerald-400 font-bold">Nenhum arquivo</span>
                 </div>
             </div>
@@ -95,7 +95,7 @@
         <!-- ABA PICKS -->
         <div id="aba-picks" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="col-span-2 space-y-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                <h3 class="font-bold text-sm text-slate-200">Top Milhares Recomendados (Score v4.2)</h3>
+                <h3 class="font-bold text-sm text-slate-200">Top Milhares Recomendados (Score v4.3)</h3>
                 <div id="tabelaTopMilhares" class="space-y-2">
                     <div class="text-xs text-slate-500 py-6 text-center">Execute o motor para gerar as milhares baseadas nos dados.</div>
                 </div>
@@ -207,58 +207,72 @@
             };
         }
 
-        // FUNÇÃO DE LIMPEZA E VALIDAÇÃO RIGOROSA DO FORMATO DE MILHAR (IGNORA ANOS E CONCURSOS)
-        function extrairMilharValido(celulaStr) {
-            if (!celulaStr) return null;
-            let limpo = celulaStr.toString().replace(/\D/g, '');
-            if (!limpo) return null;
+        // MOTOR DE EXTRAÇÃO RESTRITO AOS PRÊMIOS DA LOTERIA (EXCLUI DIAS, ANOS E CABEÇALHOS)
+        function extrairMilharesDeTexto(textoBruto) {
+            if (!textoBruto) return [];
+            
+            // Quebra o texto por linhas
+            let linhas = textoBruto.split(/\r?\n/);
+            let milharesEncontradas = [];
+            
+            let capturarProximaLinha = false;
 
-            let num = parseInt(limpo, 10);
+            for (let i = 0; i < linhas.length; i++) {
+                let linhaOriginal = linhas[i].trim();
+                let linhaUpper = linhaOriginal.toUpperCase();
 
-            // Ignora colunas que representam Anos comuns (ex: 2020 a 2030) ou IDs/Concursos muito altos se necessário
-            if (num >= 2020 && num <= 2030 && limpo.length === 4) {
-                return null; // É o ano, pula!
+                // Se a linha for um indicativo explícito de prêmio (ex: "1° PRÊMIO", "10° PRÊMIO")
+                if (/^\d+°\s*PRÊMIO/i.test(linhaUpper)) {
+                    capturarProximaLinha = true;
+                    continue;
+                }
+
+                if (capturarProximaLinha) {
+                    let limpo = linhaOriginal.replace(/\D/g, '');
+                    if (limpo.length === 4) {
+                        milharesEncontradas.push({ milhar: limpo });
+                    }
+                    capturarProximaLinha = false;
+                    continue;
+                }
+
+                // Fallback inteligente para varredura genérica caso não venha no formato de prêmios estruturado
+                let matches = linhaOriginal.match(/\b\d{4}\b/g);
+                if (matches) {
+                    matches.forEach(m => {
+                        let num = parseInt(m, 10);
+                        // Filtra anos comuns (ex: 2020 a 2030) e datas ou índices inválidos isolados
+                        if (!(num >= 2000 && num <= 2030)) {
+                            milharesEncontradas.push({ milhar: m });
+                        }
+                    });
+                }
             }
 
-            // Garante que o valor numérico caiba em uma milhar real (0 a 9999)
-            if (num > 9999) {
-                // Se o número for maior que 4 dígitos (ex: concurso 31452), pega apenas os últimos 4 dígitos
-                limpo = limpo.slice(-4);
-            }
-
-            // Retorna preenchendo com zeros à esquerda corretamente (ex: "1" vira "0001", "10" vira "0010")
-            return limpo.padStart(4, '0');
+            return milharesEncontradas;
         }
 
         // PROCESSAMENTO DE DADOS COLADOS NO TEXTAREA
         function processarDadosColados() {
-            let texto = document.getElementById('inputTextoDados').value.trim();
-            if (!texto) {
-                alert('Cole alguns números ou milhares no campo de texto.');
+            let texto = document.getElementById('inputTextoDados').value;
+            if (!texto.trim()) {
+                alert('Cole os resultados no campo de texto.');
                 return;
             }
             
-            let linhas = texto.split(/[\s,\n\r\t]+/);
-            let novosDados = [];
-            
-            linhas.forEach(item => {
-                let milharValida = extrairMilharValido(item);
-                if (milharValida) {
-                    novosDados.push({ milhar: milharValida });
-                }
-            });
+            let novosDados = extrairMilharesDeTexto(texto);
 
             if (novosDados.length === 0) {
-                alert('Nenhum dado válido encontrado no texto.');
+                alert('Nenhuma milhar válida encontrada no texto.');
                 return;
             }
 
             baseHistorica = novosDados;
             document.getElementById('statusQtdDados').innerText = `${baseHistorica.length} registros carregados na memória`;
-            alert(`Sucesso! ${baseHistorica.length} registros válidos carregados. Agora clique em "EXECUTAR MOTOR".`);
+            alert(`Sucesso! ${baseHistorica.length} prêmios válidos carregados. Agora clique em "EXECUTAR MOTOR".`);
         }
 
-        // IMPORTAÇÃO DE ARQUIVO EXCEL/CSV (XLS, XLSX) COM FILTRAGEM DE ANOS
+        // IMPORTAÇÃO DE ARQUIVO EXCEL/CSV COM FILTRAGEM SEGURA
         function importarArquivoPlanilha(e) {
             let arquivo = e.target.files[0];
             if (!arquivo) return;
@@ -278,9 +292,13 @@
                     json.forEach(linha => {
                         linha.forEach(celula => {
                             if (celula !== undefined && celula !== null) {
-                                let milharValida = extrairMilharValido(celula);
-                                if (milharValida) {
-                                    novosDados.push({ milhar: milharValida });
+                                let str = celula.toString().trim();
+                                let limpo = str.replace(/\D/g, '');
+                                if (limpo.length === 4) {
+                                    let num = parseInt(limpo, 10);
+                                    if (!(num >= 2000 && num <= 2030)) {
+                                        novosDados.push({ milhar: limpo });
+                                    }
                                 }
                             }
                         });
@@ -293,7 +311,7 @@
 
                     baseHistorica = novosDados;
                     document.getElementById('statusQtdDados').innerText = `${baseHistorica.length} registros carregados do arquivo`;
-                    alert(`Arquivo ${arquivo.name} importado com sucesso! ${baseHistorica.length} milhares limpas e carregadas.`);
+                    alert(`Arquivo ${arquivo.name} importado com sucesso! ${baseHistorica.length} milhares carregadas.`);
                 } catch (err) {
                     console.error(err);
                     alert('Erro ao processar o arquivo. Certifique-se de que é um XLS, XLSX ou CSV válido.');
@@ -491,7 +509,7 @@
             renderizarAbaRankings();
             renderizarAbaBacktest();
 
-            alert('Pipeline quantitativo executado com sucesso! Milhares corrigidas e formatadas do 0001 em diante.');
+            alert('Pipeline quantitativo executado com sucesso! Prêmios extraídos perfeitamente.');
         }
 
         function renderizarPainelDiagnostico() {
@@ -631,7 +649,7 @@
             let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resultadoAnalise, null, 2));
             let downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "lotoce_quant_state_v4.2.json");
+            downloadAnchor.setAttribute("download", "lotoce_quant_state_v4.3.json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
