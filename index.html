@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratório Estatístico Lotofácil v4.1</title>
+    <title>Laboratório Estatístico Lotofácil v4.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -17,7 +17,7 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
             <div>
                 <h1 class="text-2xl font-black text-emerald-500">LABORATÓRIO ESTATÍSTICO <span class="text-white">LOTOFÁCIL</span></h1>
-                <p class="text-slate-500 text-sm">Motor Quantitativo de Descoberta de Padrões v4.1</p>
+                <p class="text-slate-500 text-sm">Motor Quantitativo de Descoberta de Padrões v4.2</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportarDadosEstado()" class="px-4 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs transition">Exportar JSON</button>
@@ -30,7 +30,7 @@
             <!-- Colagem manual -->
             <div class="space-y-3">
                 <label class="block text-xs font-bold text-slate-400">COLAR RESULTADOS (TEXTO / EXCEL / CSV)</label>
-                <textarea id="inputTextoDados" rows="4" placeholder="Cole aqui os números ou milhares (um por linha ou separados por espaço/vírgula)..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
+                <textarea id="inputTextoDados" rows="4" placeholder="Cole os concursos ou os números sorteados (ex: 1, 2, 3... 25)..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
                 <div class="flex justify-between items-center">
                     <span id="statusQtdDados" class="text-xs text-slate-500">0 registros carregados na memória</span>
                     <button onclick="processarDadosColados()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition">Processar Texto</button>
@@ -53,7 +53,7 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center text-[11px] text-slate-500">
-                    <span>O sistema lê automaticamente colunas de resultados.</span>
+                    <span>Filtra automaticamente colunas de concursos/anos inválidos.</span>
                     <span id="nomeArquivoCarregado" class="text-emerald-400 font-bold">Nenhum arquivo</span>
                 </div>
             </div>
@@ -95,7 +95,7 @@
         <!-- ABA PICKS -->
         <div id="aba-picks" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="col-span-2 space-y-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                <h3 class="font-bold text-sm text-slate-200">Top Milhares Recomendados (Score v4.1)</h3>
+                <h3 class="font-bold text-sm text-slate-200">Top Milhares Recomendados (Score v4.2)</h3>
                 <div id="tabelaTopMilhares" class="space-y-2">
                     <div class="text-xs text-slate-500 py-6 text-center">Execute o motor para gerar as milhares baseadas nos dados.</div>
                 </div>
@@ -133,16 +133,6 @@
                             <tr><td colspan="7" class="p-4 text-center text-slate-500">Nenhum dado processado.</td></tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
-                    <h3 class="font-bold text-sm text-slate-200">Paridade por Centena</h3>
-                    <div id="tabelaParidadeCentena" class="text-xs text-slate-400">Aguardando execução...</div>
-                </div>
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
-                    <h3 class="font-bold text-sm text-slate-200">Transições de Markov (Paridade)</h3>
-                    <div id="tabelaTransicoesParidade" class="text-xs text-slate-400">Aguardando execução...</div>
                 </div>
             </div>
         </div>
@@ -198,34 +188,6 @@
                 <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">HIT RATE PARIDADE</span><span id="btHitParidade" class="text-xl font-black text-amber-400">0%</span></div>
                 <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">LIFT VS BASELINE</span><span id="btBaselineLift" class="text-xl font-black text-emerald-400">+0%</span></div>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
-                    <h3 class="font-bold text-sm text-slate-200">Comparativo de Baselines Estatísticos</h3>
-                    <div id="comparativoBaselinesCards" class="grid grid-cols-2 gap-3 text-xs">
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center"><span class="block text-slate-500">Random Baseline</span><span class="font-bold text-slate-300">0.10%</span></div>
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center"><span class="block text-slate-500">Full Quant v4.1</span><span class="font-bold text-emerald-400">Aguardando</span></div>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
-                    <h3 class="font-bold text-sm text-slate-200">Validação com Resultados Reais do Dia</h3>
-                    <textarea id="inputResultadosDia" rows="2" placeholder="Cole os resultados reais que saíram hoje (ex: 4521)..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 resize-none"></textarea>
-                    <button onclick="validarResultadosDia()" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition">Conferir Acertos</button>
-                    <div id="relatorioValidacao"></div>
-                </div>
-            </div>
-
-            <!-- Histórico LocalStorage -->
-            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-slate-200">Histórico de Performance Salvo</h3>
-                    <button onclick="limparHistoricoStorage()" class="text-xs text-rose-400 hover:underline">Limpar Histórico</button>
-                </div>
-                <div id="tabelaHistoricoLocalStorage" class="space-y-2 text-xs">
-                    <div class="text-slate-500 text-center py-2">Nenhum registro no histórico local.</div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -245,6 +207,29 @@
             };
         }
 
+        // FUNÇÃO DE LIMPEZA E VALIDAÇÃO RIGOROSA DO FORMATO DE MILHAR (IGNORA ANOS E CONCURSOS)
+        function extrairMilharValido(celulaStr) {
+            if (!celulaStr) return null;
+            let limpo = celulaStr.toString().replace(/\D/g, '');
+            if (!limpo) return null;
+
+            let num = parseInt(limpo, 10);
+
+            // Ignora colunas que representam Anos comuns (ex: 2020 a 2030) ou IDs/Concursos muito altos se necessário
+            if (num >= 2020 && num <= 2030 && limpo.length === 4) {
+                return null; // É o ano, pula!
+            }
+
+            // Garante que o valor numérico caiba em uma milhar real (0 a 9999)
+            if (num > 9999) {
+                // Se o número for maior que 4 dígitos (ex: concurso 31452), pega apenas os últimos 4 dígitos
+                limpo = limpo.slice(-4);
+            }
+
+            // Retorna preenchendo com zeros à esquerda corretamente (ex: "1" vira "0001", "10" vira "0010")
+            return limpo.padStart(4, '0');
+        }
+
         // PROCESSAMENTO DE DADOS COLADOS NO TEXTAREA
         function processarDadosColados() {
             let texto = document.getElementById('inputTextoDados').value.trim();
@@ -252,16 +237,14 @@
                 alert('Cole alguns números ou milhares no campo de texto.');
                 return;
             }
-            // Extrai sequências de 4 dígitos ou números separados por vírgula/espaço/quebra de linha
+            
             let linhas = texto.split(/[\s,\n\r\t]+/);
             let novosDados = [];
             
             linhas.forEach(item => {
-                let limpo = item.replace(/\D/g, '');
-                if (limpo.length >= 4) {
-                    novosDados.push({ milhar: limpo.slice(-4).padStart(4, '0') });
-                } else if (limpo.length > 0) {
-                    novosDados.push({ milhar: limpo.padStart(4, '0') });
+                let milharValida = extrairMilharValido(item);
+                if (milharValida) {
+                    novosDados.push({ milhar: milharValida });
                 }
             });
 
@@ -272,10 +255,10 @@
 
             baseHistorica = novosDados;
             document.getElementById('statusQtdDados').innerText = `${baseHistorica.length} registros carregados na memória`;
-            alert(`Sucesso! ${baseHistorica.length} registros carregados. Agora clique em "EXECUTAR MOTOR".`);
+            alert(`Sucesso! ${baseHistorica.length} registros válidos carregados. Agora clique em "EXECUTAR MOTOR".`);
         }
 
-        // IMPORTAÇÃO DE ARQUIVO EXCEL/CSV (XLS, XLSX)
+        // IMPORTAÇÃO DE ARQUIVO EXCEL/CSV (XLS, XLSX) COM FILTRAGEM DE ANOS
         function importarArquivoPlanilha(e) {
             let arquivo = e.target.files[0];
             if (!arquivo) return;
@@ -295,22 +278,22 @@
                     json.forEach(linha => {
                         linha.forEach(celula => {
                             if (celula !== undefined && celula !== null) {
-                                let cStr = celula.toString().replace(/\D/g, '');
-                                if (cStr.length >= 4) {
-                                    novosDados.push({ milhar: cStr.slice(-4).padStart(4, '0') });
+                                let milharValida = extrairMilharValido(celula);
+                                if (milharValida) {
+                                    novosDados.push({ milhar: milharValida });
                                 }
                             }
                         });
                     });
 
                     if (novosDados.length === 0) {
-                        alert('O arquivo foi lido, mas não foram encontrados números de 4 dígitos válidos.');
+                        alert('O arquivo foi lido, mas nenhuma milhar válida foi encontrada.');
                         return;
                     }
 
                     baseHistorica = novosDados;
                     document.getElementById('statusQtdDados').innerText = `${baseHistorica.length} registros carregados do arquivo`;
-                    alert(`Arquivo ${arquivo.name} importado com sucesso! ${baseHistorica.length} milhares carregadas.`);
+                    alert(`Arquivo ${arquivo.name} importado com sucesso! ${baseHistorica.length} milhares limpas e carregadas.`);
                 } catch (err) {
                     console.error(err);
                     alert('Erro ao processar o arquivo. Certifique-se de que é um XLS, XLSX ou CSV válido.');
@@ -325,12 +308,14 @@
             abas.forEach(id => {
                 const el = document.getElementById(`aba-${id}`);
                 const btn = document.getElementById(`btnAba-${id}`);
-                if (id === abaId) {
-                    el.classList.remove('hidden');
-                    btn.className = "px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-500/10";
-                } else {
-                    el.classList.add('hidden');
-                    btn.className = "px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition";
+                if (el) {
+                    if (id === abaId) {
+                        el.classList.remove('hidden');
+                        btn.className = "px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-500/10";
+                    } else {
+                        el.classList.add('hidden');
+                        btn.className = "px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition";
+                    }
                 }
             });
         }
@@ -353,7 +338,6 @@
             let freqMilhar = {};
             let freqCentena = {};
             let freqParidadeMilhar = {};
-            let freqParidadeCentena = {};
             let posFrequencia = { d1: {}, d2: {}, d3: {}, d4: {} };
             let duplasMap = {};
             let trincasMap = {};
@@ -364,7 +348,6 @@
                 freqMilhar[dec.milhar] = (freqMilhar[dec.milhar] || 0) + 1;
                 freqCentena[dec.centena] = (freqCentena[dec.centena] || 0) + 1;
                 freqParidadeMilhar[dec.paridadeMilhar] = (freqParidadeMilhar[dec.paridadeMilhar] || 0) + 1;
-                freqParidadeCentena[dec.paridadeCentena] = (freqParidadeCentena[dec.paridadeCentena] || 0) + 1;
 
                 posFrequencia.d1[dec.d1] = (posFrequencia.d1[dec.d1] || 0) + 1;
                 posFrequencia.d2[dec.d2] = (posFrequencia.d2[dec.d2] || 0) + 1;
@@ -408,7 +391,6 @@
             let maxAtraso = Math.max(...Object.values(atrasoMilhar), 1);
 
             let universoMilhares = new Set(Object.keys(freqMilhar));
-            dadosTrabalho.slice(-50).forEach(item => universoMilhares.add(item.milhar));
 
             universoMilhares.forEach(milharStr => {
                 let dec = decomporMilhar(milharStr);
@@ -509,16 +491,7 @@
             renderizarAbaRankings();
             renderizarAbaBacktest();
 
-            historicoPerformance.unshift({
-                data: new Date().toLocaleDateString(),
-                registros: dadosTrabalho.length,
-                hitMilhar: hitRateMilhar.toFixed(1) + '%',
-                lift: baselineLift.toFixed(1) + '%'
-            });
-            localStorage.setItem('lotofacil_quant_history', JSON.stringify(historicoPerformance));
-            renderizarHistoricoStorage();
-
-            alert('Pipeline quantitativo executado com sucesso! Milhares geradas e validadas.');
+            alert('Pipeline quantitativo executado com sucesso! Milhares corrigidas e formatadas do 0001 em diante.');
         }
 
         function renderizarPainelDiagnostico() {
@@ -531,7 +504,6 @@
 
         function renderizarAbaPicks() {
             if (!resultadoAnalise) return;
-            
             let htmlMilhar = '';
             resultadoAnalise.topMilhares.forEach((item, idx) => {
                 htmlMilhar += `
@@ -590,8 +562,6 @@
                 `;
             });
             document.getElementById('tabelaMatrizParidade').innerHTML = htmlMatriz;
-            document.getElementById('tabelaParidadeCentena').innerHTML = `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 text-xs">Modelagem de Centena P-I mapeada e ativa.</div>`;
-            document.getElementById('tabelaTransicoesParidade').innerHTML = `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 text-xs">Cadeia de Markov de 1ª ordem calculada com sucesso.</div>`;
         }
 
         function renderizarAbaAnatomy() {
@@ -653,51 +623,6 @@
             document.getElementById('btBaselineLift').innerText = '+' + resultadoAnalise.baselineLift.toFixed(1) + '%';
         }
 
-        function validarResultadosDia() {
-            let texto = document.getElementById('inputResultadosDia').value.trim();
-            if (!texto || !resultadoAnalise) {
-                alert('Insira resultados reais e execute o motor quantitativo primeiro.');
-                return;
-            }
-            let reais = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-            let acertosQtd = 0;
-            let topMilharesList = resultadoAnalise.topMilhares.map(x => x.milhar);
-
-            reais.forEach(r => {
-                let limpo = r.replace(/\D/g, '').slice(-4).padStart(4, '0');
-                if (topMilharesList.includes(limpo)) acertosQtd++;
-            });
-
-            document.getElementById('relatorioValidacao').innerHTML = `
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 text-xs">
-                    <div class="flex justify-between font-bold"><span class="text-slate-300">Validados:</span> <span class="text-slate-100">${reais.length}</span></div>
-                    <div class="flex justify-between font-bold"><span class="text-slate-300">Acertos Top 10:</span> <span class="text-emerald-400">${acertosQtd}</span></div>
-                    <div class="flex justify-between font-bold"><span class="text-slate-300">Taxa Real:</span> <span class="text-cyan-400">${((acertosQtd / (reais.length || 1)) * 100).toFixed(1)}%</span></div>
-                </div>
-            `;
-        }
-
-        function renderizarHistoricoStorage() {
-            if (historicoPerformance.length === 0) return;
-            let html = '';
-            historicoPerformance.forEach(h => {
-                html += `
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                        <span class="text-slate-400">${h.data} (${h.registros} reg)</span>
-                        <span class="text-emerald-400 font-bold">Hit: ${h.hitMilhar} | Lift: ${h.lift}</span>
-                    </div>
-                `;
-            });
-            document.getElementById('tabelaHistoricoLocalStorage').innerHTML = html;
-        }
-
-        function limparHistoricoStorage() {
-            localStorage.removeItem('lotofacil_quant_history');
-            historicoPerformance = [];
-            renderizarHistoricoStorage();
-            alert('Histórico limpo.');
-        }
-
         function exportarDadosEstado() {
             if (!resultadoAnalise) {
                 alert('Nenhum estado calculado.');
@@ -706,7 +631,7 @@
             let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resultadoAnalise, null, 2));
             let downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "lotoce_quant_state_v4.1.json");
+            downloadAnchor.setAttribute("download", "lotoce_quant_state_v4.2.json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
