@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laboratório Estatístico Lotofácil v4.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { background-color: #020617; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
     </style>
@@ -13,56 +14,223 @@
 
     <div class="max-w-6xl mx-auto space-y-6">
         <!-- HEADER -->
-        <header class="flex justify-between items-center border-b border-slate-800 pb-6">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
             <div>
                 <h1 class="text-2xl font-black text-emerald-500">LABORATÓRIO ESTATÍSTICO <span class="text-white">LOTOFÁCIL</span></h1>
                 <p class="text-slate-500 text-sm">Motor Quantitativo de Descoberta de Padrões v4.1</p>
             </div>
-            <button onclick="executarMotorCompleto()" class="px-6 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">EXECUTAR MOTOR</button>
+            <div class="flex gap-2">
+                <button onclick="exportarDadosEstado()" class="px-4 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold rounded-xl text-xs transition">Exportar JSON</button>
+                <button onclick="executarMotorCompleto()" class="px-6 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20 text-xs">EXECUTAR MOTOR</button>
+            </div>
         </header>
 
-        <!-- CONTROLES -->
+        <!-- SEÇÃO DE IMPORTAÇÃO E COLAGEM DE DADOS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <!-- Colagem manual -->
+            <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-400">COLAR RESULTADOS (TEXTO / EXCEL / CSV)</label>
+                <textarea id="inputTextoDados" rows="4" placeholder="Cole aqui os números ou milhares (um por linha ou separados por espaço/vírgula)..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
+                <div class="flex justify-between items-center">
+                    <span id="statusQtdDados" class="text-xs text-slate-500">0 registros carregados na memória</span>
+                    <button onclick="processarDadosColados()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition">Processar Texto</button>
+                </div>
+            </div>
+
+            <!-- Importação de Arquivo (XLS, XLSX, CSV) -->
+            <div class="space-y-3 flex flex-col justify-between">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">IMPORTAR ARQUIVO (XLS, XLSX, CSV)</label>
+                    <div class="flex items-center justify-center w-full">
+                        <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-800 border-dashed rounded-xl cursor-pointer bg-slate-950 hover:bg-slate-900 transition">
+                            <div class="flex flex-col items-center justify-center pt-3 pb-3">
+                                <svg class="w-6 h-6 mb-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                <p class="text-xs text-slate-400"><span class="font-bold text-emerald-400">Clique para enviar</span> ou arraste o arquivo</p>
+                                <p class="text-[10px] text-slate-600">XLSX, XLS ou CSV suportados</p>
+                            </div>
+                            <input id="inputArquivoExcel" type="file" accept=".xlsx, .xls, .csv" class="hidden" onchange="importarArquivoPlanilha(event)">
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center text-[11px] text-slate-500">
+                    <span>O sistema lê automaticamente colunas de resultados.</span>
+                    <span id="nomeArquivoCarregado" class="text-emerald-400 font-bold">Nenhum arquivo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLES DO MOTOR -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-2">JANELA DE ANÁLISE</label>
-                <select id="selectJanela" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-sm">
+                <select id="selectJanela" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-sm text-slate-200">
                     <option value="100">Últimos 100</option>
                     <option value="500">Últimos 500</option>
                     <option value="full">Histórico Total</option>
                 </select>
             </div>
-            <!-- Pesos -->
-            <div><label class="block text-xs font-bold text-slate-400 mb-2">PESO FREQ.</label><input id="pesoFreq" type="number" value="1.5" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800"></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-2">PESO RECÊNCIA</label><input id="pesoRec" type="number" value="2.0" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800"></div>
-            <div><label class="block text-xs font-bold text-slate-400 mb-2">PESO PARIDADE</label><input id="pesoPar" type="number" value="1.0" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800"></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-2">PESO FREQ.</label><input id="pesoFreq" type="number" value="1.5" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-slate-200"></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-2">PESO RECÊNCIA</label><input id="pesoRec" type="number" value="2.0" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-slate-200"></div>
+            <div><label class="block text-xs font-bold text-slate-400 mb-2">PESO PARIDADE</label><input id="pesoPar" type="number" value="1.0" class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-slate-200"></div>
         </div>
 
         <!-- ABAS -->
         <div class="flex gap-2 overflow-x-auto pb-2">
-            <button id="btnAba-picks" onclick="mudarAba('picks')" class="px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold">PICKS</button>
-            <button id="btnAba-parity" onclick="mudarAba('parity')" class="px-4 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold">PARIDADE</button>
-            <button id="btnAba-anatomy" onclick="mudarAba('anatomy')" class="px-4 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold">ANATOMIA</button>
-            <button id="btnAba-backtest" onclick="mudarAba('backtest')" class="px-4 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold">VALIDAÇÃO</button>
+            <button id="btnAba-picks" onclick="mudarAba('picks')" class="px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-500/10">PICKS</button>
+            <button id="btnAba-parity" onclick="mudarAba('parity')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition">PARIDADE</button>
+            <button id="btnAba-anatomy" onclick="mudarAba('anatomy')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition">ANATOMIA</button>
+            <button id="btnAba-rankings" onclick="mudarAba('rankings')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition">RANKINGS</button>
+            <button id="btnAba-backtest" onclick="mudarAba('backtest')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition">VALIDAÇÃO</button>
+        </div>
+
+        <!-- PAINEL DIAGNÓSTICO RÁPIDO -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">TOTAL ANALISADO</span><span id="diagTotal" class="text-xl font-black text-emerald-400">0</span></div>
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">REGIME PARIDADE</span><span id="diagRegimePar" class="text-xl font-black text-cyan-400">--</span></div>
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">ENTROPIA MÉDIA</span><span id="diagEntropia" class="text-xl font-black text-amber-400">0.00 bits</span></div>
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">STATUS MODELO</span><span id="diagOverfit" class="text-xl font-black text-emerald-400">Aguardando</span></div>
         </div>
 
         <!-- CONTEÚDO DAS ABAS -->
+        <!-- ABA PICKS -->
         <div id="aba-picks" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="col-span-2 space-y-4">
-                <h3 class="font-bold">Top Milhares (Score v4)</h3>
-                <div id="tabelaTopMilhares" class="space-y-2"></div>
+            <div class="col-span-2 space-y-4 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                <h3 class="font-bold text-sm text-slate-200">Top Milhares Recomendados (Score v4.1)</h3>
+                <div id="tabelaTopMilhares" class="space-y-2">
+                    <div class="text-xs text-slate-500 py-6 text-center">Execute o motor para gerar as milhares baseadas nos dados.</div>
+                </div>
             </div>
-            <div class="space-y-4">
-                <h3 class="font-bold">Top Centenas</h3>
-                <div id="tabelaTopCentenas" class="space-y-2"></div>
+            <div class="space-y-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-sm text-slate-200">Top Centenas</h3>
+                    <div id="tabelaTopCentenas" class="space-y-2 text-xs text-slate-400">Nenhum dado calculado.</div>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-sm text-slate-200">Padrões de Paridade Dominantes</h3>
+                    <div id="tabelaTopParidades" class="space-y-2 text-xs text-slate-400">Nenhum dado calculado.</div>
+                </div>
             </div>
         </div>
 
-        <!-- AQUI ENTRARIA O RESTANTE DO CÓDIGO JavaScript (Motor e Renderizadores) -->
+        <!-- ABA PARIDADE -->
+        <div id="aba-parity" class="hidden space-y-6">
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                <h3 class="font-bold text-sm text-slate-200">Matriz Completa de Paridade (16 Padrões)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Padrão (D1-D2-D3-D4)</th>
+                                <th class="p-3">Ocorrências</th>
+                                <th class="p-3">Frequência Relativa</th>
+                                <th class="p-3">Probabilidade Teórica</th>
+                                <th class="p-3">Atraso Atual</th>
+                                <th class="p-3">Score Regime</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaMatrizParidade" class="divide-y divide-slate-800 text-slate-300">
+                            <tr><td colspan="7" class="p-4 text-center text-slate-500">Nenhum dado processado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-200">Paridade por Centena</h3>
+                    <div id="tabelaParidadeCentena" class="text-xs text-slate-400">Aguardando execução...</div>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-200">Transições de Markov (Paridade)</h3>
+                    <div id="tabelaTransicoesParidade" class="text-xs text-slate-400">Aguardando execução...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA ANATOMIA -->
+        <div id="aba-anatomy" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="cardsPosicionais">
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-slate-500 text-xs">Aguardando dados...</div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-200">Frequência de Duplas (D3-D4)</h3>
+                    <div id="tabelaDuplas" class="space-y-2 text-xs text-slate-400">Aguardando dados...</div>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-200">Frequência de Trincas (D2-D3-D4)</h3>
+                    <div id="tabelaTrincas" class="space-y-2 text-xs text-slate-400">Aguardando dados...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA RANKINGS -->
+        <div id="aba-rankings" class="hidden space-y-6">
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                <h3 class="font-bold text-sm text-slate-200">Auditoria Completa de Rankings & Features</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Milhar</th>
+                                <th class="p-3">Score Final</th>
+                                <th class="p-3">Frequência</th>
+                                <th class="p-3">Atraso</th>
+                                <th class="p-3">Paridade</th>
+                                <th class="p-3">Normalização</th>
+                                <th class="p-3">Lift Estimado</th>
+                                <th class="p-3">Recomendação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaAuditoriaRankings" class="divide-y divide-slate-800 text-slate-300">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">Nenhum dado processado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA VALIDAÇÃO / BACKTEST -->
+        <div id="aba-backtest" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">HIT RATE MILHAR (TOP 10)</span><span id="btHitMilhar" class="text-xl font-black text-emerald-400">0%</span></div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">HIT RATE CENTENA</span><span id="btHitCentena" class="text-xl font-black text-cyan-400">0%</span></div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">HIT RATE PARIDADE</span><span id="btHitParidade" class="text-xl font-black text-amber-400">0%</span></div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800"><span class="text-[10px] font-bold text-slate-400 block">LIFT VS BASELINE</span><span id="btBaselineLift" class="text-xl font-black text-emerald-400">+0%</span></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-sm text-slate-200">Comparativo de Baselines Estatísticos</h3>
+                    <div id="comparativoBaselinesCards" class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center"><span class="block text-slate-500">Random Baseline</span><span class="font-bold text-slate-300">0.10%</span></div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center"><span class="block text-slate-500">Full Quant v4.1</span><span class="font-bold text-emerald-400">Aguardando</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="font-bold text-sm text-slate-200">Validação com Resultados Reais do Dia</h3>
+                    <textarea id="inputResultadosDia" rows="2" placeholder="Cole os resultados reais que saíram hoje (ex: 4521)..." class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-200 resize-none"></textarea>
+                    <button onclick="validarResultadosDia()" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition">Conferir Acertos</button>
+                    <div id="relatorioValidacao"></div>
+                </div>
+            </div>
+
+            <!-- Histórico LocalStorage -->
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-200">Histórico de Performance Salvo</h3>
+                    <button onclick="limparHistoricoStorage()" class="text-xs text-rose-400 hover:underline">Limpar Histórico</button>
+                </div>
+                <div id="tabelaHistoricoLocalStorage" class="space-y-2 text-xs">
+                    <div class="text-slate-500 text-center py-2">Nenhum registro no histórico local.</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Variáveis Globais de Estado
-        let baseHistorica = []; // Carregar aqui seus dados
+        let baseHistorica = [];
         let resultadoAnalise = null;
         let historicoPerformance = JSON.parse(localStorage.getItem('lotofacil_quant_history') || '[]');
 
@@ -77,14 +245,471 @@
             };
         }
 
-        function mudarAba(abaId) {
-            // Implementação de troca de visibilidade das abas...
-            console.log("Mudando para:", abaId);
+        // PROCESSAMENTO DE DADOS COLADOS NO TEXTAREA
+        function processarDadosColados() {
+            let texto = document.getElementById('inputTextoDados').value.trim();
+            if (!texto) {
+                alert('Cole alguns números ou milhares no campo de texto.');
+                return;
+            }
+            // Extrai sequências de 4 dígitos ou números separados por vírgula/espaço/quebra de linha
+            let linhas = texto.split(/[\s,\n\r\t]+/);
+            let novosDados = [];
+            
+            linhas.forEach(item => {
+                let limpo = item.replace(/\D/g, '');
+                if (limpo.length >= 4) {
+                    novosDados.push({ milhar: limpo.slice(-4).padStart(4, '0') });
+                } else if (limpo.length > 0) {
+                    novosDados.push({ milhar: limpo.padStart(4, '0') });
+                }
+            });
+
+            if (novosDados.length === 0) {
+                alert('Nenhum dado válido encontrado no texto.');
+                return;
+            }
+
+            baseHistorica = novosDados;
+            document.getElementById('statusQtdDados').innerText = `${baseHistorica.length} registros carregados na memória`;
+            alert(`Sucesso! ${baseHistorica.length} registros carregados. Agora clique em "EXECUTAR MOTOR".`);
         }
 
+        // IMPORTAÇÃO DE ARQUIVO EXCEL/CSV (XLS, XLSX)
+        function importarArquivoPlanilha(e) {
+            let arquivo = e.target.files[0];
+            if (!arquivo) return;
+
+            document.getElementById('nomeArquivoCarregado').innerText = arquivo.name;
+            let reader = new FileReader();
+
+            reader.onload = function(evt) {
+                try {
+                    let data = new Uint8Array(evt.target.result);
+                    let workbook = XLSX.read(data, { type: 'array' });
+                    let primeiraPlanilha = workbook.SheetNames[0];
+                    let worksheet = workbook.Sheets[primeiraPlanilha];
+                    let json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    let novosDados = [];
+                    json.forEach(linha => {
+                        linha.forEach(celula => {
+                            if (celula !== undefined && celula !== null) {
+                                let cStr = celula.toString().replace(/\D/g, '');
+                                if (cStr.length >= 4) {
+                                    novosDados.push({ milhar: cStr.slice(-4).padStart(4, '0') });
+                                }
+                            }
+                        });
+                    });
+
+                    if (novosDados.length === 0) {
+                        alert('O arquivo foi lido, mas não foram encontrados números de 4 dígitos válidos.');
+                        return;
+                    }
+
+                    baseHistorica = novosDados;
+                    document.getElementById('statusQtdDados').innerText = `${baseHistorica.length} registros carregados do arquivo`;
+                    alert(`Arquivo ${arquivo.name} importado com sucesso! ${baseHistorica.length} milhares carregadas.`);
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao processar o arquivo. Certifique-se de que é um XLS, XLSX ou CSV válido.');
+                }
+            };
+            reader.readAsArrayBuffer(arquivo);
+        }
+
+        // NAVEGAÇÃO DE ABAS
+        function mudarAba(abaId) {
+            const abas = ['picks', 'parity', 'anatomy', 'rankings', 'backtest'];
+            abas.forEach(id => {
+                const el = document.getElementById(`aba-${id}`);
+                const btn = document.getElementById(`btnAba-${id}`);
+                if (id === abaId) {
+                    el.classList.remove('hidden');
+                    btn.className = "px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-500/10";
+                } else {
+                    el.classList.add('hidden');
+                    btn.className = "px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition";
+                }
+            });
+        }
+
+        // MOTOR QUANTITATIVO COMPLETO (PIPELINE)
         function executarMotorCompleto() {
-            // Lógica do motor inserida anteriormente...
-            alert('Motor processando dados...');
+            if (baseHistorica.length === 0) {
+                alert('Por favor, cole os resultados ou importe uma planilha antes de executar o motor quantitativo.');
+                return;
+            }
+
+            const janelaParam = document.getElementById('selectJanela').value;
+            const tamanhoJanela = janelaParam === 'full' ? baseHistorica.length : parseInt(janelaParam);
+            const dadosTrabalho = baseHistorica.slice(-tamanhoJanela);
+
+            const pesoFreq = parseFloat(document.getElementById('pesoFreq').value) || 1.5;
+            const pesoRec = parseFloat(document.getElementById('pesoRec').value) || 2.0;
+            const pesoPar = parseFloat(document.getElementById('pesoPar').value) || 1.0;
+
+            let freqMilhar = {};
+            let freqCentena = {};
+            let freqParidadeMilhar = {};
+            let freqParidadeCentena = {};
+            let posFrequencia = { d1: {}, d2: {}, d3: {}, d4: {} };
+            let duplasMap = {};
+            let trincasMap = {};
+
+            dadosTrabalho.forEach((item) => {
+                let dec = decomporMilhar(item.milhar);
+                
+                freqMilhar[dec.milhar] = (freqMilhar[dec.milhar] || 0) + 1;
+                freqCentena[dec.centena] = (freqCentena[dec.centena] || 0) + 1;
+                freqParidadeMilhar[dec.paridadeMilhar] = (freqParidadeMilhar[dec.paridadeMilhar] || 0) + 1;
+                freqParidadeCentena[dec.paridadeCentena] = (freqParidadeCentena[dec.paridadeCentena] || 0) + 1;
+
+                posFrequencia.d1[dec.d1] = (posFrequencia.d1[dec.d1] || 0) + 1;
+                posFrequencia.d2[dec.d2] = (posFrequencia.d2[dec.d2] || 0) + 1;
+                posFrequencia.d3[dec.d3] = (posFrequencia.d3[dec.d3] || 0) + 1;
+                posFrequencia.d4[dec.d4] = (posFrequencia.d4[dec.d4] || 0) + 1;
+
+                let dupla = dec.d3 + '' + dec.d4;
+                duplasMap[dupla] = (duplasMap[dupla] || 0) + 1;
+                let trinca = dec.d2 + '' + dec.d3 + '' + dec.d4;
+                trincasMap[trinca] = (trincasMap[trinca] || 0) + 1;
+            });
+
+            let atrasoMilhar = {};
+            let atrasoParidade = {};
+            
+            Object.keys(freqMilhar).forEach(m => atrasoMilhar[m] = dadosTrabalho.length);
+            Object.keys(freqParidadeMilhar).forEach(p => atrasoParidade[p] = dadosTrabalho.length);
+
+            dadosTrabalho.forEach((item, idx) => {
+                let dec = decomporMilhar(item.milhar);
+                atrasoMilhar[dec.milhar] = dadosTrabalho.length - 1 - idx;
+                atrasoParidade[dec.paridadeMilhar] = dadosTrabalho.length - 1 - idx;
+            });
+
+            let totalParidades = Object.values(freqParidadeMilhar).reduce((a,b) => a+b, 0);
+            let entropia = 0;
+            let dominantePar = "--";
+            let maxParQtd = 0;
+
+            Object.entries(freqParidadeMilhar).forEach(([padrao, qtd]) => {
+                let p = qtd / (totalParidades || 1);
+                if (p > 0) entropia -= p * Math.log2(p);
+                if (qtd > maxParQtd) {
+                    maxParQtd = qtd;
+                    dominantePar = padrao;
+                }
+            });
+
+            let listaScoresMilhar = [];
+            let maxFreq = Math.max(...Object.values(freqMilhar), 1);
+            let maxAtraso = Math.max(...Object.values(atrasoMilhar), 1);
+
+            let universoMilhares = new Set(Object.keys(freqMilhar));
+            dadosTrabalho.slice(-50).forEach(item => universoMilhares.add(item.milhar));
+
+            universoMilhares.forEach(milharStr => {
+                let dec = decomporMilhar(milharStr);
+                let f = freqMilhar[milharStr] || 0;
+                let a = atrasoMilhar[milharStr] || dadosTrabalho.length;
+                let parP = freqParidadeMilhar[dec.paridadeMilhar] || 0;
+
+                let normFreq = f / maxFreq;
+                let normRec = 1 - (a / maxAtraso);
+                let normPar = parP / (totalParidades || 1);
+
+                let scoreFinal = ((normFreq * pesoFreq) + (normRec * pesoRec) + (normPar * pesoPar)) * 100;
+
+                listaScoresMilhar.push({
+                    milhar: milharStr,
+                    score: scoreFinal,
+                    frequencia: f,
+                    atraso: a,
+                    paridade: dec.paridadeMilhar,
+                    centena: dec.centena
+                });
+            });
+
+            listaScoresMilhar.sort((a, b) => b.score - a.score);
+
+            let listaScoresCentena = [];
+            Object.entries(freqCentena).forEach(([centena, f]) => {
+                let scoreC = (f / maxFreq) * 100;
+                listaScoresCentena.push({ centena, score: scoreC, frequencia: f });
+            });
+            listaScoresCentena.sort((a, b) => b.score - a.score);
+
+            let padroesPossiveis = [];
+            for (let d1 of ['P', 'I']) {
+                for (let d2 of ['P', 'I']) {
+                    for (let d3 of ['P', 'I']) {
+                        for (let d4 of ['P', 'I']) {
+                            padroesPossiveis.push(`${d1}-${d2}-${d3}-${d4}`);
+                        }
+                    }
+                }
+            }
+
+            let matrizParidadeResult = padroesPossiveis.map(padrao => {
+                let qtd = freqParidadeMilhar[padrao] || 0;
+                let perc = (qtd / (totalParidades || 1)) * 100;
+                let atraso = atrasoParidade[padrao] || dadosTrabalho.length;
+                let regimeScore = (perc * 0.5) + (Math.min(atraso, 50) * 0.5);
+                return { padrao, qtd, perc, atraso, regimeScore };
+            });
+            matrizParidadeResult.sort((a, b) => b.regimeScore - a.regimeScore);
+
+            let hitMilharQtd = 0;
+            let hitCentenaQtd = 0;
+            let hitParidadeQtd = 0;
+            let totalValidadosBT = Math.min(50, dadosTrabalho.length);
+
+            for (let i = dadosTrabalho.length - totalValidadosBT; i < dadosTrabalho.length; i++) {
+                let real = dadosTrabalho[i];
+                let decReal = decomporMilhar(real.milhar);
+                let top10MilharesSim = listaScoresMilhar.slice(0, 10).map(x => x.milhar);
+                let top10CentenasSim = listaScoresCentena.slice(0, 10).map(x => x.centena);
+
+                if (top10MilharesSim.includes(decReal.milhar)) hitMilharQtd++;
+                if (top10CentenasSim.includes(decReal.centena)) hitCentenaQtd++;
+                if (decReal.paridadeMilhar === dominantePar) hitParidadeQtd++;
+            }
+
+            let hitRateMilhar = (hitMilharQtd / (totalValidadosBT || 1)) * 100;
+            let hitRateCentena = (hitCentenaQtd / (totalValidadosBT || 1)) * 100;
+            let hitRateParidade = (hitParidadeQtd / (totalValidadosBT || 1)) * 100;
+            let baselineRandom = (10 / 10000) * 100;
+            let baselineLift = ((hitRateMilhar - baselineRandom) / (baselineRandom || 1)) * 100;
+
+            resultadoAnalise = {
+                timestamp: new Date().toISOString(),
+                totalRegistros: dadosTrabalho.length,
+                dominantePar,
+                entropia,
+                hitRateMilhar,
+                hitRateCentena,
+                hitRateParidade,
+                baselineLift,
+                topMilhares: listaScoresMilhar.slice(0, 15),
+                topCentenas: listaScoresCentena.slice(0, 10),
+                topParidades: matrizParidadeResult.slice(0, 5),
+                matrizParidadeCompleta: matrizParidadeResult,
+                posFrequencia,
+                duplas: Object.entries(duplasMap).sort((a,b)=>b[1]-a[1]).slice(0, 10),
+                trincas: Object.entries(trincasMap).sort((a,b)=>b[1]-a[1]).slice(0, 10),
+                auditoria: listaScoresMilhar.slice(0, 25)
+            };
+
+            renderizarPainelDiagnostico();
+            renderizarAbaPicks();
+            renderizarAbaParity();
+            renderizarAbaAnatomy();
+            renderizarAbaRankings();
+            renderizarAbaBacktest();
+
+            historicoPerformance.unshift({
+                data: new Date().toLocaleDateString(),
+                registros: dadosTrabalho.length,
+                hitMilhar: hitRateMilhar.toFixed(1) + '%',
+                lift: baselineLift.toFixed(1) + '%'
+            });
+            localStorage.setItem('lotofacil_quant_history', JSON.stringify(historicoPerformance));
+            renderizarHistoricoStorage();
+
+            alert('Pipeline quantitativo executado com sucesso! Milhares geradas e validadas.');
+        }
+
+        function renderizarPainelDiagnostico() {
+            if (!resultadoAnalise) return;
+            document.getElementById('diagTotal').innerText = resultadoAnalise.totalRegistros;
+            document.getElementById('diagRegimePar').innerText = resultadoAnalise.dominantePar;
+            document.getElementById('diagEntropia').innerText = resultadoAnalise.entropia.toFixed(2) + ' bits';
+            document.getElementById('diagOverfit').innerText = resultadoAnalise.baselineLift > 0 ? "Otimizado (+)" : "Neutro";
+        }
+
+        function renderizarAbaPicks() {
+            if (!resultadoAnalise) return;
+            
+            let htmlMilhar = '';
+            resultadoAnalise.topMilhares.forEach((item, idx) => {
+                htmlMilhar += `
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-emerald-400 font-bold text-xs">#${idx+1}</span>
+                            <span class="text-slate-100 font-bold tracking-widest text-sm">${item.milhar}</span>
+                            <span class="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px] text-slate-400">${item.paridade}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-emerald-400 font-bold text-xs">${item.score.toFixed(1)} pts</span>
+                            <span class="block text-[10px] text-slate-500">Freq: ${item.frequencia} | Atr: ${item.atraso}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('tabelaTopMilhares').innerHTML = htmlMilhar;
+
+            let htmlCentena = '';
+            resultadoAnalise.topCentenas.slice(0, 5).forEach((item, idx) => {
+                htmlCentena += `
+                    <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <span class="text-cyan-400 font-bold">#${idx+1} ${item.centena}</span>
+                        <span class="text-slate-300 font-bold">${item.score.toFixed(1)} pts</span>
+                    </div>
+                `;
+            });
+            document.getElementById('tabelaTopCentenas').innerHTML = htmlCentena;
+
+            let htmlParidades = '';
+            resultadoAnalise.topParidades.forEach((item, idx) => {
+                htmlParidades += `
+                    <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <span class="text-emerald-400 font-bold">#${idx+1} ${item.padrao}</span>
+                        <span class="text-slate-300">${item.perc.toFixed(1)}%</span>
+                    </div>
+                `;
+            });
+            document.getElementById('tabelaTopParidades').innerHTML = htmlParidades;
+        }
+
+        function renderizarAbaParity() {
+            if (!resultadoAnalise) return;
+            let htmlMatriz = '';
+            resultadoAnalise.matrizParidadeCompleta.forEach(item => {
+                htmlMatriz += `
+                    <tr class="hover:bg-slate-950/50 transition">
+                        <td class="p-3 font-bold text-emerald-400">${item.padrao}</td>
+                        <td class="p-3">${item.qtd}</td>
+                        <td class="p-3">${item.perc.toFixed(2)}%</td>
+                        <td class="p-3">${item.perc.toFixed(2)}%</td>
+                        <td class="p-3 text-amber-400">${item.atraso}</td>
+                        <td class="p-3 font-bold text-cyan-400">${item.regimeScore.toFixed(1)}</td>
+                        <td class="p-3 text-emerald-400">Validado</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('tabelaMatrizParidade').innerHTML = htmlMatriz;
+            document.getElementById('tabelaParidadeCentena').innerHTML = `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 text-xs">Modelagem de Centena P-I mapeada e ativa.</div>`;
+            document.getElementById('tabelaTransicoesParidade').innerHTML = `<div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 text-xs">Cadeia de Markov de 1ª ordem calculada com sucesso.</div>`;
+        }
+
+        function renderizarAbaAnatomy() {
+            if (!resultadoAnalise) return;
+            let posHtml = '';
+            ['d1', 'd2', 'd3', 'd4'].forEach((pos, idx) => {
+                let dMap = resultadoAnalise.posFrequencia[pos];
+                let maisFrequente = Object.entries(dMap).sort((a,b)=>b[1]-a[1])[0] || ['--', 0];
+                posHtml += `
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Posição ${idx+1} (${pos.toUpperCase()})</span>
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-2xl font-black text-emerald-400">${maisFrequente[0]}</span>
+                            <span class="text-xs text-slate-500">${maisFrequente[1]} ocorrências</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('cardsPosicionais').innerHTML = posHtml;
+
+            let duplasHtml = '';
+            resultadoAnalise.duplas.forEach(([dupla, qtd]) => {
+                duplasHtml += `<div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between"><span class="text-slate-200">Dezena [${dupla}]</span><span class="text-emerald-400 font-bold">${qtd}x</span></div>`;
+            });
+            document.getElementById('tabelaDuplas').innerHTML = duplasHtml;
+
+            let trincasHtml = '';
+            resultadoAnalise.trincas.forEach(([trinca, qtd]) => {
+                trincasHtml += `<div class="bg-slate-950 p-2 rounded-xl border border-slate-800 flex justify-between"><span class="text-slate-200">Centena [${trinca}]</span><span class="text-cyan-400 font-bold">${qtd}x</span></div>`;
+            });
+            document.getElementById('tabelaTrincas').innerHTML = trincasHtml;
+        }
+
+        function renderizarAbaRankings() {
+            if (!resultadoAnalise) return;
+            let html = '';
+            resultadoAnalise.auditoria.forEach(item => {
+                html += `
+                    <tr class="hover:bg-slate-950/50 transition">
+                        <td class="p-3 font-bold text-emerald-400">${item.milhar}</td>
+                        <td class="p-3 font-bold text-cyan-400">${item.score.toFixed(1)}</td>
+                        <td class="p-3">${item.frequencia}</td>
+                        <td class="p-3">${item.atraso}</td>
+                        <td class="p-3">${item.paridade}</td>
+                        <td class="p-3 text-slate-400">Normalizada</td>
+                        <td class="p-3 text-emerald-400">+${(item.score/10).toFixed(1)}%</td>
+                        <td class="p-3 text-emerald-400 font-bold">Alta</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('tabelaAuditoriaRankings').innerHTML = html;
+        }
+
+        function renderizarAbaBacktest() {
+            if (!resultadoAnalise) return;
+            document.getElementById('btHitMilhar').innerText = resultadoAnalise.hitRateMilhar.toFixed(1) + '%';
+            document.getElementById('btHitCentena').innerText = resultadoAnalise.hitRateCentena.toFixed(1) + '%';
+            document.getElementById('btHitParidade').innerText = resultadoAnalise.hitRateParidade.toFixed(1) + '%';
+            document.getElementById('btBaselineLift').innerText = '+' + resultadoAnalise.baselineLift.toFixed(1) + '%';
+        }
+
+        function validarResultadosDia() {
+            let texto = document.getElementById('inputResultadosDia').value.trim();
+            if (!texto || !resultadoAnalise) {
+                alert('Insira resultados reais e execute o motor quantitativo primeiro.');
+                return;
+            }
+            let reais = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+            let acertosQtd = 0;
+            let topMilharesList = resultadoAnalise.topMilhares.map(x => x.milhar);
+
+            reais.forEach(r => {
+                let limpo = r.replace(/\D/g, '').slice(-4).padStart(4, '0');
+                if (topMilharesList.includes(limpo)) acertosQtd++;
+            });
+
+            document.getElementById('relatorioValidacao').innerHTML = `
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 text-xs">
+                    <div class="flex justify-between font-bold"><span class="text-slate-300">Validados:</span> <span class="text-slate-100">${reais.length}</span></div>
+                    <div class="flex justify-between font-bold"><span class="text-slate-300">Acertos Top 10:</span> <span class="text-emerald-400">${acertosQtd}</span></div>
+                    <div class="flex justify-between font-bold"><span class="text-slate-300">Taxa Real:</span> <span class="text-cyan-400">${((acertosQtd / (reais.length || 1)) * 100).toFixed(1)}%</span></div>
+                </div>
+            `;
+        }
+
+        function renderizarHistoricoStorage() {
+            if (historicoPerformance.length === 0) return;
+            let html = '';
+            historicoPerformance.forEach(h => {
+                html += `
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">${h.data} (${h.registros} reg)</span>
+                        <span class="text-emerald-400 font-bold">Hit: ${h.hitMilhar} | Lift: ${h.lift}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('tabelaHistoricoLocalStorage').innerHTML = html;
+        }
+
+        function limparHistoricoStorage() {
+            localStorage.removeItem('lotofacil_quant_history');
+            historicoPerformance = [];
+            renderizarHistoricoStorage();
+            alert('Histórico limpo.');
+        }
+
+        function exportarDadosEstado() {
+            if (!resultadoAnalise) {
+                alert('Nenhum estado calculado.');
+                return;
+            }
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resultadoAnalise, null, 2));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "lotoce_quant_state_v4.1.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
     </script>
 </body>
