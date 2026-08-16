@@ -2,83 +2,76 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>LQIP — Processador Robusto V6.3</title>
+    <title>LQIP — Processador Hierárquico V6.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-gray-200 p-8">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-400 mb-4">LQIP — PROCESSADOR ROBUSTO V6.3</h1>
+        <h1 class="text-2xl font-bold text-blue-400 mb-4">LQIP — PROCESSADOR HIERÁRQUICO V6.4</h1>
         
         <div class="glass p-6 bg-slate-800 rounded-lg border border-slate-700">
-            <h2 class="text-blue-300 font-bold mb-2">COLAR DADOS (PREVISUALIZAÇÃO)</h2>
-            <textarea id="dataInput" class="w-full h-32 bg-slate-950 border border-slate-600 p-4 rounded text-xs text-green-400 mb-4" 
-            placeholder="Cole aqui. Exemplo:&#10;16/08/2026 NOITE 4381&#10;16/08/2026; NOITE; 2743"></textarea>
+            <h2 class="text-blue-300 font-bold mb-2">COLE O RELATÓRIO COMPLETO</h2>
+            <textarea id="dataInput" class="w-full h-48 bg-slate-950 border border-slate-600 p-4 rounded text-xs text-green-400 mb-4" 
+            placeholder="Cole o formato completo (Extração, Data, Prêmios...)"></textarea>
             
             <div class="flex gap-4">
-                <button onclick="LQIP.preview()" class="bg-yellow-600 hover:bg-yellow-700 px-6 py-2 rounded font-bold">1. PREVISUALIZAR</button>
-                <button onclick="LQIP.process()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-bold">2. PROCESSAR ANÁLISE</button>
+                <button onclick="LQIP.process()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-bold">PROCESSAR E EXTRATAR MILHARES</button>
             </div>
         </div>
 
-        <div id="debugOutput" class="mt-4 p-4 bg-black rounded border border-gray-700 text-xs text-gray-400 hidden"></div>
+        <div id="debugOutput" class="mt-4 p-4 bg-black rounded border border-gray-700 text-xs hidden"></div>
         <div id="reportContent" class="mt-6 p-8 bg-slate-800 rounded border border-slate-700 text-sm whitespace-pre-wrap hidden"></div>
     </div>
 
     <script>
         const LQIP = {
-            parsedData: [],
-
-            preview: function() {
-                const raw = document.getElementById('dataInput').value.trim();
-                const debugDiv = document.getElementById('debugOutput');
-                debugDiv.classList.remove('hidden');
-                
+            process: function() {
+                const raw = document.getElementById('dataInput').value;
                 const lines = raw.split(/\r?\n/);
-                this.parsedData = [];
-                let html = "<strong>Previsualização do que o sistema entendeu:</strong><br><br>";
+                const debugDiv = document.getElementById('debugOutput');
+                const reportDiv = document.getElementById('reportContent');
+                
+                let currentSession = "DESCONHECIDA";
+                let currentDate = null;
+                let extractedData = [];
+                
+                debugDiv.classList.remove('hidden');
+                debugDiv.innerHTML = "<strong>LOG DE PROCESSAMENTO:</strong><br>";
 
                 lines.forEach((line, index) => {
-                    if (line.trim().length === 0) return;
-                    
-                    // Regex busca: Data (dd/mm/aaaa ou yyyy-mm-dd), Sessão (texto), Número (4 dígitos)
-                    const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})/);
-                    const numMatch = line.match(/\b\d{4}\b/);
-                    
-                    if (dateMatch && numMatch) {
-                        const date = dateMatch[0];
-                        const number = numMatch[0];
-                        // Assume sessão é o texto entre a data e o número
-                        const session = line.replace(date, '').replace(number, '').replace(/[,;]/g, '').trim();
-                        
-                        this.parsedData.push({ date, session, number });
-                        html += `Linha ${index+1}: [Data: ${date}] | [Sessão: ${session}] | [Número: ${number}]<br>`;
-                    } else {
-                        html += `<span class="text-red-500">Linha ${index+1}: Não reconhecida -> "${line}"</span><br>`;
+                    line = line.trim();
+                    if (!line) return;
+
+                    // 1. Identificar SESSÃO
+                    if (line.toLowerCase().includes('extração')) {
+                        currentSession = line.replace(/Extração/i, '').trim();
+                        debugDiv.innerHTML += `Detectada Sessão: ${currentSession}<br>`;
+                    }
+                    // 2. Identificar DATA
+                    else if (line.match(/\d{2}\/\d{2}\/\d{4}/)) {
+                        currentDate = line.match(/\d{2}\/\d{2}\/\d{4}/)[0];
+                        debugDiv.innerHTML += `Detectada Data: ${currentDate}<br>`;
+                    }
+                    // 3. Identificar MILHAR (Linha que contém exatamente 4 dígitos e não é cabeçalho de prêmio)
+                    else if (line.match(/^\d{4}$/)) {
+                        if (currentDate) {
+                            extractedData.push({ date: currentDate, session: currentSession, number: line });
+                            debugDiv.innerHTML += `<span class="text-green-400">Extraído: ${line} (${currentSession})</span><br>`;
+                        }
                     }
                 });
 
-                debugDiv.innerHTML = html;
-            },
-
-            process: function() {
-                if (this.parsedData.length === 0) return alert("Clique em PREVISUALIZAR primeiro e verifique se há dados válidos.");
-                
-                const container = document.getElementById('reportContent');
-                container.classList.remove('hidden');
-                container.innerText = `
-========================================
-LQIP — PREVISÃO QUANTITATIVA
-========================================
-STATUS: ${this.parsedData.length} registros processados com sucesso.
-
-[MOTOR DE ANÁLISE]
-Dados validados. O sistema está pronto para rodar o motor quantitativo.
-
-[AMOSTRA DOS DADOS]
-Data: ${this.parsedData[0].date} | Sessão: ${this.parsedData[0].session} | Num: ${this.parsedData[0].number}
-
-(O sistema agora está pronto para aplicar as regras do Prompt Master V6.1)
-                `;
+                if (extractedData.length > 0) {
+                    reportDiv.classList.remove('hidden');
+                    reportDiv.innerText = `========================================\n` +
+                                          `LQIP — PREVISÃO QUANTITATIVA\n` +
+                                          `========================================\n` +
+                                          `PROCESSAMENTO CONCLUÍDO\n` +
+                                          `Total de milhares extraídas: ${extractedData.length}\n\n` +
+                                          `AMOSTRA:\n` + JSON.stringify(extractedData.slice(0, 5), null, 2);
+                } else {
+                    alert("Nenhum dado legível. Certifique-se de que as linhas de data seguem o padrão dd/mm/aaaa e os números estão isolados.");
+                }
             }
         };
     </script>
