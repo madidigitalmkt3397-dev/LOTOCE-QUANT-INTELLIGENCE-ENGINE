@@ -2,131 +2,125 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LQIP — LotoCE Quant Intelligence Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS para processar Excel/CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Courier New', Courier, monospace; background-color: #0f172a; color: #e2e8f0; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid #334155; }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-8">
 
     <div class="max-w-4xl mx-auto">
-        <header class="mb-8 border-b border-slate-700 pb-4">
-            <h1 class="text-2xl font-bold text-blue-400">LQIP — LOTOCE QUANT INTELLIGENCE PLATFORM</h1>
-            <p class="text-sm text-slate-400">PROMPT MASTER V6.1 — VERSÃO COM LEITURA DE ARQUIVOS (EXCEL/CSV)</p>
-        </header>
+        <h1 class="text-2xl font-bold text-blue-400 mb-6">LQIP — PROCESSADOR INTELIGENTE V6.2</h1>
 
-        <!-- Seção de Entrada -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <section class="glass p-6 rounded-lg">
-                <h2 class="text-lg font-semibold mb-4 text-blue-300">1. INPUT POR ARQUIVO</h2>
-                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="text-sm text-slate-400 w-full mb-4">
-                <p class="text-xs text-slate-500">Aceita: .xlsx, .csv. Certifique-se que o arquivo possua as colunas: date, session, number.</p>
+                <h2 class="text-blue-300 font-bold mb-2">1. IMPORTAR ARQUIVO</h2>
+                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="w-full text-xs">
             </section>
 
             <section class="glass p-6 rounded-lg">
-                <h2 class="text-lg font-semibold mb-4 text-blue-300">2. INPUT POR TEXTO (JSON/CSV)</h2>
-                <textarea id="dataInput" class="w-full h-24 bg-slate-900 border border-slate-700 p-2 rounded text-xs text-slate-300 mb-2" placeholder='Colar JSON ou CSV (date, session, number)'></textarea>
-                <button onclick="LQIP.processText()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold text-white">PROCESSAR TEXTO</button>
+                <h2 class="text-blue-300 font-bold mb-2">2. COLAR DADOS</h2>
+                <textarea id="dataInput" class="w-full h-24 bg-slate-900 border border-slate-700 p-2 rounded text-xs mb-2" 
+                placeholder="Exemplo CSV:&#10;2026-08-16, NOITE, 4381&#10;2026-08-16; NOITE; 2743"></textarea>
+                <button onclick="LQIP.processText()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold">PROCESSAR</button>
             </section>
         </div>
 
+        <div id="status" class="mb-4 text-xs text-yellow-500"></div>
+
         <section id="outputSection" class="hidden">
-            <div id="reportContent" class="glass p-8 rounded-lg text-sm leading-relaxed whitespace-pre-wrap"></div>
+            <div id="reportContent" class="glass p-8 rounded-lg text-sm whitespace-pre-wrap"></div>
         </section>
     </div>
 
     <script>
-        // Lógica de Processamento de Arquivos
+        const LQIP = {
+            processText: function() {
+                const raw = document.getElementById('dataInput').value.trim();
+                if (!raw) return alert("Cole os dados primeiro.");
+
+                let data = [];
+
+                // 1. Tentar JSON
+                try {
+                    data = JSON.parse(raw);
+                    this.process(data);
+                    return;
+                } catch (e) {
+                    // Se não for JSON, prosseguir para Parser de Texto Flexível
+                }
+
+                // 2. Parser Flexível (CSV/Texto)
+                try {
+                    const lines = raw.split(/\r?\n/);
+                    let startIndex = 0;
+                    
+                    // Verifica se a primeira linha é cabeçalho para pular
+                    if (lines[0].toLowerCase().includes('date') || lines[0].toLowerCase().includes('data')) {
+                        startIndex = 1;
+                    }
+
+                    for (let i = startIndex; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        // Aceita vírgula, ponto-e-vírgula ou tabulação
+                        const delimiter = line.includes(';') ? ';' : (line.includes('\t') ? '\t' : ',');
+                        const parts = line.split(delimiter).map(p => p.trim());
+
+                        if (parts.length >= 3) {
+                            data.push({
+                                date: parts[0],
+                                session: parts[1],
+                                number: parts[2]
+                            });
+                        }
+                    }
+
+                    if (data.length === 0) throw new Error("Nenhum dado legível encontrado. Formato esperado: Data, Sessão, Número.");
+                    
+                    document.getElementById('status').innerText = `Sucesso: ${data.length} registros processados.`;
+                    this.process(data);
+                } catch (err) {
+                    document.getElementById('status').innerText = "Erro: " + err.message;
+                }
+            },
+
+            process: function(data) {
+                // Lógica de Processamento
+                const report = `
+========================================
+LQIP — PREVISÃO QUANTITATIVA
+========================================
+STATUS: Dados carregados com sucesso.
+ENTRADAS: ${data.length} registros.
+
+[PROCESSAMENTO DO MOTOR]
+A análise estatística está rodando sobre ${data.length} amostras...
+
+(Resultados completos da análise seriam gerados aqui com base no seu prompt v6.1)
+`;
+                const container = document.getElementById('outputSection');
+                container.classList.remove('hidden');
+                document.getElementById('reportContent').innerText = report;
+            }
+        };
+
+        // File handler para Excel
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet);
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 LQIP.process(json);
             };
             reader.readAsArrayBuffer(file);
         });
-
-        const LQIP = {
-            config: { version: "v6.1-lotoce", cycles: 10000 },
-
-            processText: function() {
-                const raw = document.getElementById('dataInput').value.trim();
-                if (!raw) return alert("Cole os dados primeiro.");
-                
-                let data;
-                try {
-                    // Tenta parsear como JSON
-                    data = JSON.parse(raw);
-                } catch (e) {
-                    // Se falhar, tenta interpretar como CSV simples (tentativa de parse)
-                    try {
-                        const lines = raw.split('\n');
-                        data = lines.map(line => {
-                            const [date, session, number] = line.split(',');
-                            return { date: date.trim(), session: session.trim(), number: number.trim() };
-                        });
-                    } catch (err) {
-                        alert("Erro: Formato inválido. Use JSON ou CSV (data,sessão,número).");
-                        return;
-                    }
-                }
-                this.process(data);
-            },
-
-            process: function(data) {
-                console.log("Processando:", data);
-                // Engine de análise
-                const report = this.generateReport(data);
-                this.renderReport(report);
-            },
-
-            generateReport: function(data) {
-                // Aqui entraria a lógica de análise real do prompt
-                // Simulando a saída para demonstração do layout
-                return `
-========================================
-LQIP — PREVISÃO QUANTITATIVA
-========================================
-EXTRAÇÃO: NOITE
-DATA: ${new Date().toLocaleDateString()}
-
-[MESA REDONDA E ANÁLISE QUANTITATIVA]
-...Dados processados: ${data.length} entradas carregadas...
-
-[TOP 3 REGIMES]
-1. P-I-P-I
-2. P-P-I-P
-3. I-P-I-P
-
-[BACKTEST]
-Ciclos: ${this.config.cycles}
-Status: ROBUSTO
-
-============================================================
-AUDITORIA
-============================================================
-dataset_version: ${this.config.version}
-timestamp: ${new Date().toISOString()}
-`;
-            },
-
-            renderReport: function(report) {
-                const container = document.getElementById('outputSection');
-                container.classList.remove('hidden');
-                document.getElementById('reportContent').innerText = report;
-            }
-        };
     </script>
 </body>
 </html>
