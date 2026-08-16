@@ -2,125 +2,85 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>LQIP — LotoCE Quant Intelligence Platform</title>
+    <title>LQIP — Processador Robusto V6.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body { font-family: 'Courier New', Courier, monospace; background-color: #0f172a; color: #e2e8f0; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid #334155; }
-    </style>
 </head>
-<body class="p-8">
-
+<body class="bg-slate-900 text-gray-200 p-8">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-2xl font-bold text-blue-400 mb-6">LQIP — PROCESSADOR INTELIGENTE V6.2</h1>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <section class="glass p-6 rounded-lg">
-                <h2 class="text-blue-300 font-bold mb-2">1. IMPORTAR ARQUIVO</h2>
-                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="w-full text-xs">
-            </section>
-
-            <section class="glass p-6 rounded-lg">
-                <h2 class="text-blue-300 font-bold mb-2">2. COLAR DADOS</h2>
-                <textarea id="dataInput" class="w-full h-24 bg-slate-900 border border-slate-700 p-2 rounded text-xs mb-2" 
-                placeholder="Exemplo CSV:&#10;2026-08-16, NOITE, 4381&#10;2026-08-16; NOITE; 2743"></textarea>
-                <button onclick="LQIP.processText()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold">PROCESSAR</button>
-            </section>
+        <h1 class="text-2xl font-bold text-blue-400 mb-4">LQIP — PROCESSADOR ROBUSTO V6.3</h1>
+        
+        <div class="glass p-6 bg-slate-800 rounded-lg border border-slate-700">
+            <h2 class="text-blue-300 font-bold mb-2">COLAR DADOS (PREVISUALIZAÇÃO)</h2>
+            <textarea id="dataInput" class="w-full h-32 bg-slate-950 border border-slate-600 p-4 rounded text-xs text-green-400 mb-4" 
+            placeholder="Cole aqui. Exemplo:&#10;16/08/2026 NOITE 4381&#10;16/08/2026; NOITE; 2743"></textarea>
+            
+            <div class="flex gap-4">
+                <button onclick="LQIP.preview()" class="bg-yellow-600 hover:bg-yellow-700 px-6 py-2 rounded font-bold">1. PREVISUALIZAR</button>
+                <button onclick="LQIP.process()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-bold">2. PROCESSAR ANÁLISE</button>
+            </div>
         </div>
 
-        <div id="status" class="mb-4 text-xs text-yellow-500"></div>
-
-        <section id="outputSection" class="hidden">
-            <div id="reportContent" class="glass p-8 rounded-lg text-sm whitespace-pre-wrap"></div>
-        </section>
+        <div id="debugOutput" class="mt-4 p-4 bg-black rounded border border-gray-700 text-xs text-gray-400 hidden"></div>
+        <div id="reportContent" class="mt-6 p-8 bg-slate-800 rounded border border-slate-700 text-sm whitespace-pre-wrap hidden"></div>
     </div>
 
     <script>
         const LQIP = {
-            processText: function() {
+            parsedData: [],
+
+            preview: function() {
                 const raw = document.getElementById('dataInput').value.trim();
-                if (!raw) return alert("Cole os dados primeiro.");
+                const debugDiv = document.getElementById('debugOutput');
+                debugDiv.classList.remove('hidden');
+                
+                const lines = raw.split(/\r?\n/);
+                this.parsedData = [];
+                let html = "<strong>Previsualização do que o sistema entendeu:</strong><br><br>";
 
-                let data = [];
-
-                // 1. Tentar JSON
-                try {
-                    data = JSON.parse(raw);
-                    this.process(data);
-                    return;
-                } catch (e) {
-                    // Se não for JSON, prosseguir para Parser de Texto Flexível
-                }
-
-                // 2. Parser Flexível (CSV/Texto)
-                try {
-                    const lines = raw.split(/\r?\n/);
-                    let startIndex = 0;
+                lines.forEach((line, index) => {
+                    if (line.trim().length === 0) return;
                     
-                    // Verifica se a primeira linha é cabeçalho para pular
-                    if (lines[0].toLowerCase().includes('date') || lines[0].toLowerCase().includes('data')) {
-                        startIndex = 1;
-                    }
-
-                    for (let i = startIndex; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (!line) continue;
-
-                        // Aceita vírgula, ponto-e-vírgula ou tabulação
-                        const delimiter = line.includes(';') ? ';' : (line.includes('\t') ? '\t' : ',');
-                        const parts = line.split(delimiter).map(p => p.trim());
-
-                        if (parts.length >= 3) {
-                            data.push({
-                                date: parts[0],
-                                session: parts[1],
-                                number: parts[2]
-                            });
-                        }
-                    }
-
-                    if (data.length === 0) throw new Error("Nenhum dado legível encontrado. Formato esperado: Data, Sessão, Número.");
+                    // Regex busca: Data (dd/mm/aaaa ou yyyy-mm-dd), Sessão (texto), Número (4 dígitos)
+                    const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})/);
+                    const numMatch = line.match(/\b\d{4}\b/);
                     
-                    document.getElementById('status').innerText = `Sucesso: ${data.length} registros processados.`;
-                    this.process(data);
-                } catch (err) {
-                    document.getElementById('status').innerText = "Erro: " + err.message;
-                }
+                    if (dateMatch && numMatch) {
+                        const date = dateMatch[0];
+                        const number = numMatch[0];
+                        // Assume sessão é o texto entre a data e o número
+                        const session = line.replace(date, '').replace(number, '').replace(/[,;]/g, '').trim();
+                        
+                        this.parsedData.push({ date, session, number });
+                        html += `Linha ${index+1}: [Data: ${date}] | [Sessão: ${session}] | [Número: ${number}]<br>`;
+                    } else {
+                        html += `<span class="text-red-500">Linha ${index+1}: Não reconhecida -> "${line}"</span><br>`;
+                    }
+                });
+
+                debugDiv.innerHTML = html;
             },
 
-            process: function(data) {
-                // Lógica de Processamento
-                const report = `
+            process: function() {
+                if (this.parsedData.length === 0) return alert("Clique em PREVISUALIZAR primeiro e verifique se há dados válidos.");
+                
+                const container = document.getElementById('reportContent');
+                container.classList.remove('hidden');
+                container.innerText = `
 ========================================
 LQIP — PREVISÃO QUANTITATIVA
 ========================================
-STATUS: Dados carregados com sucesso.
-ENTRADAS: ${data.length} registros.
+STATUS: ${this.parsedData.length} registros processados com sucesso.
 
-[PROCESSAMENTO DO MOTOR]
-A análise estatística está rodando sobre ${data.length} amostras...
+[MOTOR DE ANÁLISE]
+Dados validados. O sistema está pronto para rodar o motor quantitativo.
 
-(Resultados completos da análise seriam gerados aqui com base no seu prompt v6.1)
-`;
-                const container = document.getElementById('outputSection');
-                container.classList.remove('hidden');
-                document.getElementById('reportContent').innerText = report;
+[AMOSTRA DOS DADOS]
+Data: ${this.parsedData[0].date} | Sessão: ${this.parsedData[0].session} | Num: ${this.parsedData[0].number}
+
+(O sistema agora está pronto para aplicar as regras do Prompt Master V6.1)
+                `;
             }
         };
-
-        // File handler para Excel
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                LQIP.process(json);
-            };
-            reader.readAsArrayBuffer(file);
-        });
     </script>
 </body>
 </html>
