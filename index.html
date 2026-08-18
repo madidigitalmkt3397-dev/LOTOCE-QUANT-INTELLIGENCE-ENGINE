@@ -268,7 +268,6 @@
             font-size: 0.9rem;
         }
 
-        /* Tabela Sniper */
         .sniper-table {
             width: 100%;
             border-collapse: collapse;
@@ -438,20 +437,24 @@ MANHÃ
                     <div class="value" id="statSimulations">0</div>
                 </div>
                 <div class="stat-card">
-                    <div>Acertos Exatos Milhar</div>
-                    <div class="value" id="statExactThousand">0</div>
+                    <div>TOP 1 Acertos</div>
+                    <div class="value" id="statTop1">0</div>
                 </div>
                 <div class="stat-card">
-                    <div>Acertos Exatos Centena</div>
-                    <div class="value" id="statExactHundred">0</div>
+                    <div>TOP 3 Acertos</div>
+                    <div class="value" id="statTop3">0</div>
                 </div>
                 <div class="stat-card">
-                    <div>Quase-Acertos (Parciais)</div>
-                    <div class="value" id="statPartial">0</div>
+                    <div>TOP 5 Acertos</div>
+                    <div class="value" id="statTop5">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>TOP 10 Acertos</div>
+                    <div class="value" id="statTop10">0</div>
                 </div>
             </div>
             <div class="diagnostic-box">
-                <h4>Relatório de Desempenho Histórico (Sem Data Leakage)</h4>
+                <h4>Relatório de Desempenho do Sniper (Top 1 / 3 / 5 / 10)</h4>
                 <ul id="diagnosticList">
                     <li>Aguardando execução...</li>
                 </ul>
@@ -503,7 +506,6 @@ MANHÃ
             if (el) el.className = 'step-box ' + status;
         }
 
-        // Função para gerar hash/assinatura única do conteúdo do dataset (Evita cache incorreto)
         function generateInputSignature(results) {
             const concatenated = results.map(r => r.date + r.draw + r.number).join('|');
             let hash = 0;
@@ -515,7 +517,6 @@ MANHÃ
             return 'SIG-' + Math.abs(hash).toString(16) + '-' + results.length;
         }
 
-        // Amostra de Exemplo Exata de 2 Dias (80 Registros)
         document.getElementById('btnSample').addEventListener('click', () => {
             const sample = `
 Dia 13/08/2026
@@ -632,7 +633,6 @@ NOITE
             }
 
             try {
-                // 1. Ingestão Estrita & Validação por Contexto de Prêmio
                 const parseResult = parseInputStricto(rawText);
                 globalState.rawResults = parseResult.results;
                 globalState.auditStats = parseResult.audit;
@@ -643,19 +643,16 @@ NOITE
                 log(`Ingestão concluída. Milhares válidas: ${globalState.rawResults.length} | Assinatura: ${globalState.inputSignature}`);
                 setStepStatus('stepIngest', 'completed');
 
-                // 2. Pipeline
                 setStepStatus('stepPipeline', 'active');
                 const pipelineData = runPipeline(globalState.rawResults);
                 log('Pipeline de análise estrutural executado.');
                 setStepStatus('stepPipeline', 'completed');
 
-                // 3. Análise de Centenas e Prefixos
                 setStepStatus('stepAnalysis', 'active');
                 const analysisResult = analyzeCentenasAndPrefixos(globalState.rawResults);
                 log('Análise detalhada de centenas e prefixos concluída.');
                 setStepStatus('stepAnalysis', 'completed');
 
-                // 4. Módulo Sniper de Milhares (Top 10 com diversidade de centenas)
                 setStepStatus('stepSniper', 'active');
                 globalState.sniperTop10 = generateSniperTop10(analysisResult, globalState.rawResults);
                 renderSniperTable(globalState.sniperTop10);
@@ -663,7 +660,6 @@ NOITE
                 log('Módulo Sniper gerou o TOP 10 com sucesso (centenas exclusivas).');
                 setStepStatus('stepSniper', 'completed');
 
-                // 5. TOP 3 e Variações
                 setStepStatus('stepTop3', 'active');
                 globalState.top3 = globalState.sniperTop10.slice(0, 3);
                 renderTop3AndVariations(globalState.top3);
@@ -671,22 +667,22 @@ NOITE
                 log('TOP 3 e variações estruturais gerados.');
                 setStepStatus('stepTop3', 'completed');
 
-                // Pipeline Geral de Apoio (15 milhares / 5 centenas)
                 globalState.generalRanking = generatePredictiveRanking(globalState.rawResults);
                 renderRecommendation(globalState.generalRanking);
                 document.getElementById('cardRecommendation').classList.remove('hidden');
 
-                // 6. Backtest 10.000 Temporal Walk-Forward (Obrigatoriamente após candidatos e sem data leakage)
                 setStepStatus('stepBacktest', 'active');
                 log('Executando Backtest Temporal Walk-Forward (sem data leakage)...');
                 const backtestResult = runTemporalBacktest(globalState.rawResults);
                 globalState.backtestStats = backtestResult;
 
                 document.getElementById('statSimulations').innerText = backtestResult.simulations;
-                document.getElementById('statExactThousand').innerText = backtestResult.exactThousands;
-                document.getElementById('statExactHundred').innerText = backtestResult.exactHundreds;
-                document.getElementById('statPartial').innerText = backtestResult.partials;
-                renderDiagnostics(backtestResult.diagnostics);
+                document.getElementById('statTop1').innerText = `${backtestResult.top1Count} (${backtestResult.top1Rate}%)`;
+                document.getElementById('statTop3').innerText = `${backtestResult.top3Count} (${backtestResult.top3Rate}%)`;
+                document.getElementById('statTop5').innerText = `${backtestResult.top5Count} (${backtestResult.top5Rate}%)`;
+                document.getElementById('statTop10').innerText = `${backtestResult.top10Count} (${backtestResult.top10Rate}%)`;
+                
+                renderDiagnostics(backtestResult.diagnostics, backtestResult);
                 document.getElementById('cardBacktest').classList.remove('hidden');
                 log(`Backtest finalizado: ${backtestResult.simulations} simulações válidas.`);
                 setStepStatus('stepBacktest', 'completed');
@@ -699,7 +695,6 @@ NOITE
             }
         });
 
-        // PARSER CIRÚRGICO ESTRITO
         function parseInputStricto(text) {
             const lines = text.split('\n');
             let results = [];
@@ -808,7 +803,6 @@ NOITE
             return { frequencies };
         }
 
-        // ANÁLISE DETALHADA DE CENTENAS E PREFIXOS
         function analyzeCentenasAndPrefixos(dataset) {
             let centenasStats = {};
             let prefixosStats = {};
@@ -818,7 +812,6 @@ NOITE
                 const prefixo = item.number.charAt(0);
                 const centena = item.number.slice(1);
 
-                // Centena
                 if (!centenasStats[centena]) {
                     centenasStats[centena] = { freq: 0, lastSeen: idx, recency: dataset.length - idx };
                 }
@@ -826,14 +819,12 @@ NOITE
                 centenasStats[centena].lastSeen = idx;
                 centenasStats[centena].recency = dataset.length - idx;
 
-                // Prefixo
                 if (!prefixosStats[prefixo]) {
                     prefixosStats[prefixo] = { freq: 0, lastSeen: idx };
                 }
                 prefixosStats[prefixo].freq++;
                 prefixosStats[prefixo].lastSeen = idx;
 
-                // Combinação
                 const combo = prefixo + centena;
                 if (!comboStats[combo]) {
                     comboStats[combo] = { count: 0, lastSeen: idx };
@@ -844,15 +835,12 @@ NOITE
             return { centenasStats, prefixosStats, comboStats, total: dataset.length };
         }
 
-        // GERAR TOP 10 SNIPER COM GARANTIA DE DIVERSIDADE DE CENTENAS
+        // CORREÇÃO 1: SELEÇÃO FINAL DO SNIPER COM APLICAÇÃO DE NÃO REPETIÇÃO SOMENTE NA SELEÇÃO FINAL
         function generateSniperTop10(analysis, dataset) {
             let candidates = [];
             const { centenasStats, prefixosStats } = analysis;
 
             const centenasList = Object.keys(centenasStats);
-            const prefixosList = Object.keys(prefixosStats);
-
-            // Se faltarem prefixos, preenche com os 10 dígitos padrão
             const allPrefixos = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
             centenasList.forEach(centena => {
@@ -860,7 +848,6 @@ NOITE
                 allPrefixos.forEach(prefixo => {
                     const pFreq = prefixosStats[prefixo] ? prefixosStats[prefixo].freq : 1;
                     
-                    // Cálculo estatístico de score multi-indicador
                     let score = (cData.freq * 15) + (pFreq * 5) + (cData.recency * 0.5) + (Math.random() * 2);
                     
                     let motivos = [];
@@ -882,19 +869,24 @@ NOITE
                 });
             });
 
-            // Ordenar por score decrescente
+            // Ordenar todos os candidatos por SCORE decrescente
             candidates.sort((a, b) => b.score - a.score);
 
-            // REGRA ANTI-REPETIÇÃO: Nenhuma centena pode se repetir no TOP 10
+            // Regra exata de seleção final: usedHundreds = new Set()
             let top10 = [];
-            let seenCentenas = new Set();
+            let usedHundreds = new Set();
 
             for (let c of candidates) {
-                if (!seenCentenas.has(c.centena)) {
-                    seenCentenas.add(c.centena);
+                // 1. Extrair os últimos 3 dígitos (centena já é c.centena)
+                // 2. Verificar se essa centena já está em usedHundreds.
+                if (!usedHundreds.has(c.centena)) {
+                    // 3. Se NÃO estiver: adicionar candidato ao TOP 10; adicionar centena ao usedHundreds.
+                    usedHundreds.add(c.centena);
                     top10.push(c);
+                    // 5. Parar quando houver 10 candidatos válidos.
                     if (top10.length === 10) break;
                 }
+                // 4. Se já estiver: ignorar candidato e continuar.
             }
 
             return top10;
@@ -946,7 +938,6 @@ NOITE
             let c = th.slice(1);
             let cp = c.split('');
 
-            // Variações respeitando o modelo PREFIXO + CENTENA e permutação interna controlada
             vars.add(p + cp[2] + cp[1] + cp[0]);
             vars.add(p + cp[1] + cp[2] + cp[0]);
             let altPrefix1 = String((parseInt(p) + 1) % 10);
@@ -958,13 +949,12 @@ NOITE
             return Array.from(vars).slice(0, 5);
         }
 
-        // Pipeline geral de apoio (15 milhares / 5 centenas)
         function generatePredictiveRanking(dataset) {
             let digitScores = {};
             for (let i = 0; i < 10; i++) digitScores[String(i)] = 0;
 
             dataset.forEach((item, idx) => {
-                const weightFactor = (idx + 1) / dataset.length;
+                let weightFactor = (idx + 1) / dataset.length;
                 for (let char of item.number) {
                     digitScores[char] = (digitScores[char] || 0) + (1 * weightFactor);
                 }
@@ -1030,21 +1020,25 @@ NOITE
             });
         }
 
-        // BACKTEST TEMPORAL WALK-FORWARD (Executado SOMENTE APÓS os candidatos, sem data leakage)
+        // CORREÇÃO 2 E 3: BACKTEST COM REGISTRO DO RANKING DA CENTENA REAL E MÉTRICAS TOP 1 / 3 / 5 / 10
         function runTemporalBacktest(dataset) {
             let simulations = 0;
-            let exactThousands = 0;
-            let exactHundreds = 0;
-            let partials = 0;
+            let top1Count = 0;
+            let top3Count = 0;
+            let top5Count = 0;
+            let top10Count = 0;
+            let outsideTop10 = 0;
 
             const minWindow = Math.min(10, Math.floor(dataset.length / 2));
             if (dataset.length < 10) {
                 const simCount = dataset.length > 5 ? dataset.length - 5 : 0;
                 return {
                     simulations: simCount,
-                    exactThousands: 1,
-                    exactHundreds: 2,
-                    partials: 3,
+                    top1Count: 0, top1Rate: "0.00",
+                    top3Count: 0, top3Rate: "0.00",
+                    top5Count: 0, top5Rate: "0.00",
+                    top10Count: 0, top10Rate: "0.00",
+                    outsideTop10: simCount,
                     diagnostics: [
                         `Backtest realizado com ${simCount} simulações válidas devido ao volume compacto de dados.`,
                         `Nenhum vazamento de dados detectado (walk-forward temporal respeitado).`
@@ -1057,45 +1051,59 @@ NOITE
                 const trainingSlice = dataset.slice(0, i);
                 const actualTarget = dataset[i];
 
+                // CORREÇÃO 2: Garantir sem data leakage (Histórico anterior -> Gerar Ranking -> Gerar Top 10 -> Pegar resultado real -> Verificar posição)
                 const analysis = analyzeCentenasAndPrefixos(trainingSlice);
                 const sniperRun = generateSniperTop10(analysis, trainingSlice);
 
-                const top10Thousands = sniperRun.map(s => s.thousand);
-                const top10Hundreds = sniperRun.map(s => s.centena);
+                // Centena real ocorrida
+                const actualHundred = actualTarget.number.slice(1);
 
-                if (top10Thousands.includes(actualTarget.number)) {
-                    exactThousands++;
-                }
-                if (top10Hundreds.includes(actualTarget.number.slice(1))) {
-                    exactHundreds++;
+                // Encontrar a posição (ranking) da centena real no TOP 10 do Sniper
+                let rankingPosition = -1;
+                for (let idx = 0; idx < sniperRun.length; idx++) {
+                    if (sniperRun[idx].centena === actualHundred) {
+                        rankingPosition = idx + 1; // Posição de 1 a 10
+                        break;
+                    }
                 }
 
-                let matching = 0;
-                const predTop1 = top10Thousands[0] || '';
-                for (let ch of predTop1) {
-                    if (actualTarget.number.includes(ch)) matching++;
+                // CORREÇÃO 3: Avaliar nas faixas TOP 1, TOP 3, TOP 5, TOP 10
+                if (rankingPosition !== -1) {
+                    if (rankingPosition <= 1) top1Count++;
+                    if (rankingPosition <= 3) top3Count++;
+                    if (rankingPosition <= 5) top5Count++;
+                    if (rankingPosition <= 10) top10Count++;
+                } else {
+                    outsideTop10++;
                 }
-                if (matching >= 2) partials++;
 
                 if (simulations >= 10000) break;
             }
 
+            const calcRate = (count) => simulations > 0 ? ((count / simulations) * 100).toFixed(2) : "0.00";
+
             const diagnostics = [
-                `Walk-Forward Temporal: ${simulations} janelas independentes avaliadas estritamente até T-1.`,
-                `Integridade Anti-Leakage: O modelo testou candidatos gerados sem acesso ao resultado futuro T.`,
-                `Desempenho do TOP 10 Sniper e Centenas Exclusivas auditado com sucesso.`
+                `Total de rodadas analisadas: ${simulations}`,
+                `Centenas encontradas no TOP 1: ${top1Count} (${calcRate(top1Count)}%)`,
+                `Centenas encontradas no TOP 3: ${top3Count} (${calcRate(top3Count)}%)`,
+                `Centenas encontradas no TOP 5: ${top5Count} (${calcRate(top5Count)}%)`,
+                `Centenas encontradas no TOP 10: ${top10Count} (${calcRate(top10Count)}%)`,
+                `Fora do TOP 10: ${outsideTop10} (${calcRate(outsideTop10)}%)`,
+                `Integridade Anti-Leakage: O ranking foi gerado estritamente antes de consultar o resultado real T.`
             ];
 
             return {
                 simulations,
-                exactThousands,
-                exactHundreds,
-                partials,
+                top1Count, top1Rate: calcRate(top1Count),
+                top3Count, top3Rate: calcRate(top3Count),
+                top5Count, top5Rate: calcRate(top5Count),
+                top10Count, top10Rate: calcRate(top10Count),
+                outsideTop10,
                 diagnostics
             };
         }
 
-        function renderDiagnostics(diagnostics) {
+        function renderDiagnostics(diagnostics, result) {
             const list = document.getElementById('diagnosticList');
             list.innerHTML = '';
             diagnostics.forEach(d => {
