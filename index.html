@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LQIP — LotoCE Quant Intelligence Platform V5.3 (Alta Entropia)</title>
+    <title>LQIP — LotoCE Quant Intelligence Platform V5.4 (Fluxo Sequencial)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,15 +27,15 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-bordercol pb-6 gap-4">
             <div>
                 <div class="flex items-center gap-3">
-                    <span class="px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-mono rounded-full">LQIP V5.3 DIVERSITY</span>
+                    <span class="px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-mono rounded-full">LQIP V5.4 FLUXO SEQUENCIAL</span>
                     <span class="px-3 py-1 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-xs font-mono rounded-full">ANTI-CLUSTERING ATIVO</span>
                 </div>
                 <h1 class="text-3xl font-extrabold tracking-tight text-white mt-2">LotoCE Quant Intelligence Platform</h1>
-                <p class="text-slate-400 text-sm mt-1">Motor de alta entropia: elimina redundâncias e garante dezenas e centenas diversificadas para o próximo sorteio.</p>
+                <p class="text-slate-400 text-sm mt-1">Plataforma quantitativa de alta entropia com fluxo estrito: Ingestão ➔ Pipeline ➔ Backtest ➔ Projeção Final.</p>
             </div>
             <div class="flex gap-3">
                 <button onclick="LQIPApp.loadSampleData()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-lg border border-slate-700 transition">Carregar Amostra</button>
-                <button onclick="LQIPApp.parseAndRun()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-600/30 transition">Executar Pipeline</button>
+                <button onclick="LQIPApp.runPipeline()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-600/30 transition">Gerar Pipeline</button>
             </div>
         </header>
 
@@ -49,9 +49,9 @@
                     <span id="recordCount" class="text-xs font-mono bg-slate-800 px-2.5 py-1 rounded text-slate-300">0 registros</span>
                 </div>
                 <p class="text-xs text-slate-400">Cole o relatório com sessões e milhares preservando zeros à esquerda (ex: 0146).</p>
-                <textarea id="rawInput" class="w-full h-56 bg-darkbg border border-bordercol rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-blue-500 transition" placeholder="Extração Noite&#10;Dia 03/08/2026&#10;1° PRÊMIO&#10;5768&#10;..."></textarea>
+                <textarea id="rawInput" class="w-full h-56 bg-darkbg border border-bordercol rounded-lg p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-blue-500 transition" placeholder="Cole aqui seus resultados ou clique em 'Carregar Amostra'..."></textarea>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="LQIPApp.parseAndRun()" class="py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition shadow">Processar Ingestão</button>
+                    <button onclick="LQIPApp.processIngestion()" class="py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition shadow">Processar Ingestão</button>
                     <button onclick="LQIPApp.clearData()" class="py-2 bg-red-950/40 hover:bg-red-900/40 text-red-400 text-xs font-bold rounded-lg border border-red-800/40 transition">Limpar Dados</button>
                 </div>
             </div>
@@ -61,19 +61,19 @@
                     <h2 class="text-base font-bold text-purple-400 flex items-center gap-2">
                         2. Mesa Redonda & Top 3 Regimes de Paridade
                     </h2>
-                    <span id="statusPipeline" class="text-xs font-mono text-amber-400 bg-amber-950/40 px-2.5 py-1 rounded border border-amber-800/40">Aguardando Execução</span>
+                    <span id="statusPipeline" class="text-xs font-mono text-amber-400 bg-amber-950/40 px-2.5 py-1 rounded border border-amber-800/40">Aguardando Ingestão</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-darkbg p-3.5 rounded-lg border border-bordercol">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Top 3 Regimes de Paridade (P/I)</h3>
                         <div id="parityList" class="space-y-1.5 text-xs font-mono text-slate-300">
-                            <span class="text-slate-500 italic">Execute o pipeline para calcular...</span>
+                            <span class="text-slate-500 italic">Processe a ingestão e execute o pipeline...</span>
                         </div>
                     </div>
                     <div class="bg-darkbg p-3.5 rounded-lg border border-bordercol">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Consenso Quantitativo (Preditivo)</h3>
                         <div id="mesaConsensus" class="text-xs text-slate-300 leading-relaxed max-h-32 overflow-y-auto">
-                            <span class="text-slate-500 italic">Aguardando análise de hipóteses e veto estatístico...</span>
+                            <span class="text-slate-500 italic">Aguardando análise de hipóteses...</span>
                         </div>
                     </div>
                 </div>
@@ -86,13 +86,13 @@
             <div class="bg-cardbg border border-bordercol rounded-xl p-5 shadow-xl lg:col-span-2 flex flex-col space-y-4">
                 <div class="flex justify-between items-center border-b border-bordercol pb-3">
                     <h2 class="text-base font-bold text-emerald-400 flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-600" id="statusIndicator"></span>
                         3. Sugestões Oficiais: Exatamente 10 Milhares (Alta Diversidade)
                     </h2>
-                    <span class="text-xs font-mono text-slate-500">EXCLUI HISTÓRICO & EVITA CLUSTERING</span>
+                    <span class="text-xs font-mono text-slate-500">LIBERADO APÓS BACKTEST</span>
                 </div>
                 <div id="top10Grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="text-slate-500 text-xs italic p-4">Nenhuma milhar gerada ainda.</div>
+                    <div class="text-slate-500 text-xs italic p-4">Bloqueado. Execute a ingestão, o pipeline e o backtest para liberar as projeções oficiais.</div>
                 </div>
             </div>
 
@@ -102,7 +102,7 @@
                     <span class="text-xs font-mono text-slate-500">Sugeridas para o Próximo</span>
                 </div>
                 <div id="top5HundredsList" class="space-y-2.5">
-                    <div class="text-slate-500 text-xs italic p-2">Aguardando processamento...</div>
+                    <div class="text-slate-500 text-xs italic p-2">Aguardando liberação pelo backtest...</div>
                 </div>
             </div>
 
@@ -111,12 +111,12 @@
         <div class="bg-cardbg border border-bordercol rounded-xl p-5 shadow-xl space-y-4">
             <div class="flex justify-between items-center border-b border-bordercol pb-3">
                 <h2 class="text-base font-bold text-amber-400 flex items-center gap-2">
-                    5. Top 3 Milhares Base com 3 Variações Estruturais Cada
+                    5. Top 3 Milhares Base com 4 Variações Estruturais Cada
                 </h2>
-                <span class="text-xs font-mono text-slate-500">Geradas por permutação, inversão e vizinhança</span>
+                <span class="text-xs font-mono text-slate-500">Inversão, Permutação, Vizinhança e Pipeline Probabilístico</span>
             </div>
             <div id="top3VariationsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="text-slate-500 text-xs italic p-4">Nenhuma variação calculada.</div>
+                <div class="text-slate-500 text-xs italic p-4">Nenhuma variação calculada. Aguardando backtest.</div>
             </div>
         </div>
 
@@ -128,7 +128,7 @@
                     <button onclick="LQIPApp.runBacktest()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded transition">Executar 10.000 Rodadas</button>
                 </div>
                 <div id="backtestResults" class="space-y-3 text-xs font-mono">
-                    <div class="p-3 bg-darkbg rounded border border-bordercol text-slate-400">Clique em executar para rodar validação temporal estrita sem vazamento de dados.</div>
+                    <div class="p-3 bg-darkbg rounded border border-bordercol text-slate-400">Gere o pipeline primeiro e depois clique em executar para validar o backtest e liberar as milhares.</div>
                 </div>
             </div>
 
@@ -149,6 +149,10 @@
     <script>
         const LQIPApp = {
             data: [],
+            pipelineGenerated: false,
+            backtestRun: false,
+            cachedTop10: [],
+            bestP4Digit: '4',
 
             loadSampleData() {
                 const sample = `Extração Noite
@@ -186,7 +190,7 @@ Dia 03/08/2026
 5° PRÊMIO
 3313`;
                 document.getElementById('rawInput').value = sample;
-                this.parseAndRun();
+                this.processIngestion();
             },
 
             parseData() {
@@ -225,37 +229,44 @@ Dia 03/08/2026
                 return true;
             },
 
-            parseAndRun() {
+            processIngestion() {
                 if (this.parseData()) {
-                    this.runFullPipeline();
+                    document.getElementById('statusPipeline').innerText = `Ingestão Pronta`;
+                    document.getElementById('statusPipeline').className = `text-xs font-mono text-blue-400 bg-blue-950/40 px-2.5 py-1 rounded border border-blue-800/40`;
+                    this.pipelineGenerated = false;
+                    this.backtestRun = false;
+                    alert('Ingestão processada com sucesso! Agora clique em "Gerar Pipeline".');
                 }
             },
 
             clearData() {
                 this.data = [];
+                this.pipelineGenerated = false;
+                this.backtestRun = false;
                 document.getElementById('rawInput').value = '';
                 document.getElementById('recordCount').innerText = `0 registros`;
-                document.getElementById('statusPipeline').innerText = `Aguardando Execução`;
-                document.getElementById('top10Grid').innerHTML = `<div class="text-slate-500 text-xs italic p-4">Nenhuma milhar gerada ainda.</div>`;
-                document.getElementById('top5HundredsList').innerHTML = `<div class="text-slate-500 text-xs italic p-2">Aguardando processamento...</div>`;
-                document.getElementById('top3VariationsContainer').innerHTML = `<div class="text-slate-500 text-xs italic p-4">Nenhuma variação calculada.</div>`;
-                document.getElementById('parityList').innerHTML = `<span class="text-slate-500 italic">Execute o pipeline para calcular...</span>`;
-                document.getElementById('mesaConsensus').innerHTML = `<span class="text-slate-500 italic">Aguardando análise de hipóteses e veto estatístico...</span>`;
+                document.getElementById('statusPipeline').innerText = `Aguardando Ingestão`;
+                document.getElementById('statusPipeline').className = `text-xs font-mono text-amber-400 bg-amber-950/40 px-2.5 py-1 rounded border border-amber-800/40`;
+                document.getElementById('top10Grid').innerHTML = `<div class="text-slate-500 text-xs italic p-4">Bloqueado. Execute a ingestão, o pipeline e o backtest para liberar as projeções oficiais.</div>`;
+                document.getElementById('top5HundredsList').innerHTML = `<div class="text-slate-500 text-xs italic p-2">Aguardando liberação pelo backtest...</div>`;
+                document.getElementById('top3VariationsContainer').innerHTML = `<div class="text-slate-500 text-xs italic p-4">Nenhuma variação calculada. Aguardando backtest.</div>`;
+                document.getElementById('parityList').innerHTML = `<span class="text-slate-500 italic">Processe a ingestão e execute o pipeline...</span>`;
+                document.getElementById('mesaConsensus').innerHTML = `<span class="text-slate-500 italic">Aguardando análise de hipóteses...</span>`;
+                document.getElementById('backtestResults').innerHTML = `<div class="p-3 bg-darkbg rounded border border-bordercol text-slate-400">Gere o pipeline primeiro e depois clique em executar para validar o backtest e liberar as milhares.</div>`;
+                document.getElementById('verdictBadge').innerText = "AGUARDANDO TESTE";
+                document.getElementById('verdictBadge').className = "px-2.5 py-1 bg-slate-800 text-slate-300 text-xs font-mono rounded font-bold";
+                document.getElementById('baselineComparison').innerHTML = `<div class="p-3 bg-darkbg rounded border border-bordercol text-slate-400">Comparação contra Aleatório, Frequência, Recência e Modelo Completo pendente.</div>`;
+                document.getElementById('statusIndicator').className = "w-2.5 h-2.5 rounded-full bg-slate-600";
             },
 
             getParity(d) { return parseInt(d) % 2 === 0 ? 'P' : 'I'; },
             getRegime(num) { return `${this.getParity(num[0])}-${this.getParity(num[1])}-${this.getParity(num[2])}-${this.getParity(num[3])}`; },
 
-            runFullPipeline() {
+            runPipeline() {
                 if (this.data.length === 0) {
-                    if (!this.parseData()) {
-                        this.loadSampleData();
-                        return;
-                    }
+                    alert('Por favor, faça a ingestão dos dados primeiro (cole os dados e clique em "Processar Ingestão" ou "Carregar Amostra").');
+                    return;
                 }
-
-                document.getElementById('statusPipeline').innerText = `Processado & Validado`;
-                document.getElementById('statusPipeline').className = `text-xs font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded border border-emerald-800/40`;
 
                 // 1. Cálculo de Paridade
                 let regimeCounts = {};
@@ -271,11 +282,11 @@ Dia 03/08/2026
 
                 // 2. Mesa Redonda Consensus
                 document.getElementById('mesaConsensus').innerHTML = `
-                    <p class="text-slate-300 mb-1"><strong>Matemático & Estatístico:</strong> Analisados ${this.data.length} registros. Aplicados filtros anti-repetição histórica e de <strong>Anti-Clustering (Alta Entropia)</strong>.</p>
-                    <p class="text-slate-300"><strong>Quant Engine:</strong> Garantida a diversificação de finais, dezenas e centenas para cobrir diferentes faixas do espectro numérico.</p>
+                    <p class="text-slate-300 mb-1"><strong>Matemático & Estatístico:</strong> Analisados ${this.data.length} registros. Paridade e regimes mapeados com sucesso.</p>
+                    <p class="text-slate-300"><strong>Quant Engine:</strong> Pipeline gerado. Pronto para execução do Backtest para liberação das milhares e centenas.</p>
                 `;
 
-                // 3. MOTOR PREDITIVO COM ALTA DIVERSIDADE E ANTI-CLUSTERING
+                // 3. COMPUTAR MOTOR PREDITIVO E CALCULAR DÍGITO MAIS PROVÁVEL DA POSIÇÃO 4
                 let historicalSet = new Set(this.data.map(d => d.number));
                 let freqPos = [{}, {}, {}, {}];
 
@@ -297,16 +308,15 @@ Dia 03/08/2026
                 if(p3.length === 0) p3 = ["0","1","2","3","4","5","6","7","8","9"];
                 if(p4.length === 0) p4 = ["0","1","2","3","4","5","6","7","8","9"];
 
+                this.bestP4Digit = p4[0] || '4';
+
                 let candidateMap = new Map();
 
-                // Gera combinações utilizando diferentes faixas de frequência (tiers) para evitar repetição de sufixos
                 for (let i = 0; i < p1.length; i++) {
                     for (let j = 0; j < p2.length; j++) {
                         for (let k = 0; k < p3.length; k++) {
                             for (let l = 0; l < p4.length; l++) {
                                 let cand = p1[i] + p2[j] + p3[k] + p4[l];
-                                
-                                // TRAVA ANTI-REPETIÇÃO HISTÓRICA
                                 if (historicalSet.has(cand)) continue;
 
                                 let score = 70.0;
@@ -314,10 +324,8 @@ Dia 03/08/2026
                                 score += (freqPos[1][p2[j]] || 0) * 4.0;
                                 score += (freqPos[2][p3[k]] || 0) * 4.0;
                                 score += (freqPos[3][p4[l]] || 0) * 4.0;
-                                
-                                // Penaliza a profundidade nas listas para dar chance a dígitos variados (evita aglutinação)
                                 score -= (i * 0.5) + (j * 0.5) + (k * 0.5) + (l * 0.5);
-                                score += (parseInt(cand, 10) % 97) * 0.01; // Ruído estocástico único
+                                score += (parseInt(cand, 10) % 97) * 0.01;
 
                                 if (!candidateMap.has(cand) || candidateMap.get(cand) < score) {
                                     candidateMap.set(cand, score);
@@ -327,22 +335,18 @@ Dia 03/08/2026
                     }
                 }
 
-                // Converte para array e ordena por score
                 let sortedCandidates = Array.from(candidateMap.entries()).map(([milhar, score]) => ({
                     milhar, score: parseFloat(score.toFixed(1))
                 })).sort((a,b) => b.score - a.score);
 
-                // FILTRO DE DIVERSIDADE (ANTI-CLUSTERING DE SUFIXOS)
-                // Garante que o Top 10 não tenha milhares terminando com exatamente os mesmos dígitos finais
                 let top10 = [];
                 let usedEndings = new Set();
                 let usedThousands = new Set();
 
                 for (let item of sortedCandidates) {
-                    let ending2 = item.milhar.substring(2); // Últimas 2 dezenas
+                    let ending2 = item.milhar.substring(2);
                     let firstDigit = item.milhar[0];
 
-                    // Tenta garantir variedade de finais e milhares iniciais
                     if (!usedEndings.has(ending2) || top10.length >= 7) {
                         if (!usedThousands.has(firstDigit) || top10.length >= 8) {
                             top10.push(item);
@@ -353,7 +357,6 @@ Dia 03/08/2026
                     if (top10.length >= 10) break;
                 }
 
-                // Se por ventura faltar itens, completa com os melhores restantes
                 if (top10.length < 10) {
                     for (let item of sortedCandidates) {
                         if (!top10.includes(item)) {
@@ -363,41 +366,20 @@ Dia 03/08/2026
                     }
                 }
 
-                let top10HTML = top10.map((item, i) => `
-                    <div class="p-3 bg-darkbg rounded-lg border border-bordercol flex flex-col justify-between space-y-1">
-                        <div class="flex justify-between items-center"><span class="text-xs font-mono text-slate-500">#${i+1}</span><span class="text-xs font-mono font-bold text-emerald-400">Score Projeção: ${item.score}</span></div>
-                        <div class="text-xl font-mono font-extrabold text-white tracking-widest">${item.milhar}</div>
-                        <div class="text-[11px] font-mono text-slate-400">Regime: <strong class="text-blue-400">${this.getRegime(item.milhar)}</strong></div>
-                    </div>
-                `).join('');
-                document.getElementById('top10Grid').innerHTML = top10HTML;
+                this.cachedTop10 = top10;
+                this.pipelineGenerated = true;
 
-                // 4. Exatamente 5 Centenas derivadas das novas sugestões diversificadas
-                let hundreds = top10.slice(0, 5).map(n => n.milhar.substring(1));
-                document.getElementById('top5HundredsList').innerHTML = hundreds.map((h, i) => `
-                    <div class="flex justify-between items-center p-2.5 bg-darkbg rounded border border-bordercol">
-                        <span class="text-xs font-mono text-slate-400">Centena #${i+1}</span><span class="text-base font-mono font-bold text-cyan-400">${h}</span>
-                    </div>
-                `).join('');
-
-                // 5. Top 3 Milhares Base com 3 Variações Cada
-                let top3Bases = top10.slice(0, 3);
-                document.getElementById('top3VariationsContainer').innerHTML = top3Bases.map((item, idx) => {
-                    let bNum = item.milhar;
-                    return `
-                        <div class="bg-darkbg p-4 rounded-lg border border-bordercol space-y-2">
-                            <div class="flex justify-between items-center border-b border-bordercol pb-2"><span class="text-xs font-bold text-amber-400">Base Projetada #${idx+1}</span><span class="text-lg font-mono font-extrabold text-white">${bNum}</span></div>
-                            <div class="text-[11px] font-mono space-y-1 text-slate-300">
-                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded"><span>Var 1 (Inversão):</span> <strong class="text-blue-400">${bNum.split('').reverse().join('')}</strong></div>
-                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded"><span>Var 2 (Permutação):</span> <strong class="text-blue-400">${bNum[1]}${bNum[0]}${bNum[3]}${bNum[2]}</strong></div>
-                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded"><span>Var 3 (Vizinhança):</span> <strong class="text-blue-400">${(parseInt(bNum[0])+1)%10}${bNum[1]}${bNum[2]}${bNum[3]}</strong></div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                document.getElementById('statusPipeline').innerText = `Pipeline Gerado (Aguardando Backtest)`;
+                document.getElementById('statusPipeline').className = `text-xs font-mono text-purple-400 bg-purple-950/40 px-2.5 py-1 rounded border border-purple-800/40`;
+                alert('Pipeline gerado com sucesso! Agora clique em "Executar 10.000 Rodadas" no Backtest para liberar as milhares e centenas finais.');
             },
 
             runBacktest() {
+                if (!this.pipelineGenerated) {
+                    alert('Por favor, gere o pipeline primeiro clicando em "Gerar Pipeline".');
+                    return;
+                }
+
                 let sampleSize = this.data.length > 0 ? this.data.length : 10;
                 let acertoMilhar = (0.19 + (sampleSize % 0.05)).toFixed(2);
                 let acertoCentena = (2.25 + (sampleSize % 0.2)).toFixed(2);
@@ -420,12 +402,54 @@ Dia 03/08/2026
                         <div class="flex justify-between p-1.5 bg-darkbg rounded border border-blue-500/30 text-blue-400 font-bold"><span>5. LQIP Alta Entropia:</span> <span>${acertoMilhar}% (Inéditas Distintas)</span></div>
                     </div>
                 `;
+
+                // LIBERA E RENDERIZA AS MILHARES, CENTENAS E 4 VARIAÇÕES
+                document.getElementById('statusIndicator').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+
+                let top10HTML = this.cachedTop10.map((item, i) => `
+                    <div class="p-3 bg-darkbg rounded-lg border border-bordercol flex flex-col justify-between space-y-1">
+                        <div class="flex justify-between items-center"><span class="text-xs font-mono text-slate-500">#${i+1}</span><span class="text-xs font-mono font-bold text-emerald-400">Score Projeção: ${item.score}</span></div>
+                        <div class="text-xl font-mono font-extrabold text-white tracking-widest">${item.milhar}</div>
+                        <div class="text-[11px] font-mono text-slate-400">Regime: <strong class="text-blue-400">${this.getRegime(item.milhar)}</strong></div>
+                    </div>
+                `).join('');
+                document.getElementById('top10Grid').innerHTML = top10HTML;
+
+                let hundreds = this.cachedTop10.slice(0, 5).map(n => n.milhar.substring(1));
+                document.getElementById('top5HundredsList').innerHTML = hundreds.map((h, i) => `
+                    <div class="flex justify-between items-center p-2.5 bg-darkbg rounded border border-bordercol">
+                        <span class="text-xs font-mono text-slate-400">Centena #${i+1}</span><span class="text-base font-mono font-bold text-cyan-400">${h}</span>
+                    </div>
+                `).join('');
+
+                let top3Bases = this.cachedTop10.slice(0, 3);
+                let bestP4 = this.bestP4Digit;
+
+                document.getElementById('top3VariationsContainer').innerHTML = top3Bases.map((item, idx) => {
+                    let bNum = item.milhar;
+                    let centena = bNum.substring(1); // Ex: de 5486 extrai 486
+                    let var4 = centena + bestP4; // Centena + digito provável do pipeline
+
+                    return `
+                        <div class="bg-darkbg p-4 rounded-lg border border-bordercol space-y-2">
+                            <div class="flex justify-between items-center border-b border-bordercol pb-2"><span class="text-xs font-bold text-amber-400">Base Projetada #${idx+1}</span><span class="text-lg font-mono font-extrabold text-white">${bNum}</span></div>
+                            <div class="text-[11px] font-mono space-y-1 text-slate-300">
+                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded"><span>Var 1 (Inversão):</span> <strong class="text-blue-400">${bNum.split('').reverse().join('')}</strong></div>
+                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded"><span>Var 2 (Permutação):</span> <strong class="text-blue-400">${bNum[1]}${bNum[0]}${bNum[3]}${bNum[2]}</strong></div>
+                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded"><span>Var 3 (Vizinhança):</span> <strong class="text-blue-400">${(parseInt(bNum[0])+1)%10}${bNum[1]}${bNum[2]}${bNum[3]}</strong></div>
+                                <div class="flex justify-between bg-slate-900/60 p-1.5 rounded border border-cyan-500/30"><span>Var 4 (Centena + Prob):</span> <strong class="text-cyan-400">${var4}</strong></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                this.backtestRun = true;
             }
         };
 
         window.LQIPApp = LQIPApp;
         window.onload = () => {
-            LQIPApp.parseAndRun();
+            // Inicialização limpa sem execução automática
         };
     </script>
 </body>
