@@ -232,6 +232,11 @@
             margin-bottom: 6px;
         }
 
+        .diagnostic-box li.warning-item {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
         .top3-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -379,6 +384,12 @@ MANHÃ
             <div class="diagnostic-box">
                 <h4>Distribuição por Extração</h4>
                 <ul id="auditExtractionList">
+                    <li>Aguardando ingestão...</li>
+                </ul>
+            </div>
+            <div class="diagnostic-box" id="auditDatesBox">
+                <h4>Distribuição por Data Detectada</h4>
+                <ul id="auditDatesList">
                     <li>Aguardando ingestão...</li>
                 </ul>
             </div>
@@ -641,6 +652,9 @@ NOITE
                 renderAudit(parseResult.audit, globalState.inputSignature);
                 document.getElementById('cardAudit').classList.remove('hidden');
                 log(`Ingestão concluída. Milhares válidas: ${globalState.rawResults.length} | Assinatura: ${globalState.inputSignature}`);
+                if (parseResult.audit.noDateCount > 0) {
+                    log(`ATENÇÃO: ${parseResult.audit.noDateCount} milhares foram lidas ANTES de qualquer linha de data ser detectada e ficaram marcadas como "${parseResult.audit.noDateLabel}". Verifique se cada bloco do seu input começa com uma linha "Dia DD/MM/AAAA".`);
+                }
                 setStepStatus('stepIngest', 'completed');
 
                 setStepStatus('stepPipeline', 'active');
@@ -698,13 +712,23 @@ NOITE
         function parseInputStricto(text) {
             const lines = text.split('\n');
             let results = [];
-            let currentDate = '2026-08-14';
+            // BUGFIX DATA: removida a data hardcoded '2026-08-14'.
+            // Antes, QUALQUER bloco sem uma linha "Dia DD/MM/AAAA" detectada
+            // era silenciosamente rotulado com essa data fixa, fazendo o
+            // sistema "se basear" numa data específica mesmo quando o
+            // usuário colava dados de outro dia (ex: dia 15).
+            // Agora, currentDate começa como null e só é definida quando
+            // uma linha de data é realmente encontrada no texto colado.
+            let currentDate = null;
+            const NO_DATE_LABEL = 'SEM-DATA-DETECTADA';
             let currentDraw = 'MANHÃ';
             
             let totalLines = lines.length;
             let datesCount = 0;
             let ignoredCount = 0;
+            let noDateCount = 0;
             let extractionCounts = { 'MANHÃ': 0, 'TARDE': 0, 'TARDE II': 0, 'NOITE': 0 };
+            let dateCounts = {};
 
             let expectingPrizeNumber = false;
 
@@ -751,8 +775,16 @@ NOITE
                         }
                     }
 
+                    // BUGFIX DATA: em vez de herdar um hardcode fixo, usamos
+                    // um rótulo explícito quando nenhuma data foi detectada
+                    // ainda, e contabilizamos isso para alertar o usuário.
+                    const resolvedDate = currentDate !== null ? currentDate : NO_DATE_LABEL;
+                    if (currentDate === null) {
+                        noDateCount++;
+                    }
+
                     results.push({
-                        date: currentDate,
+                        date: resolvedDate,
                         draw: currentDraw,
                         position: results.length + 1,
                         number: candidateNum
@@ -763,6 +795,9 @@ NOITE
                     } else {
                         extractionCounts[currentDraw] = 1;
                     }
+
+                    dateCounts[resolvedDate] = (dateCounts[resolvedDate] || 0) + 1;
+
                     expectingPrizeNumber = false;
                 }
             }
@@ -774,7 +809,10 @@ NOITE
                     validThousands: results.length,
                     datesCount,
                     ignoredCount,
-                    extractionCounts
+                    noDateCount,
+                    noDateLabel: NO_DATE_LABEL,
+                    extractionCounts,
+                    dateCounts
                 }
             };
         }
@@ -792,6 +830,30 @@ NOITE
                     li.innerText = `${draw}: ${count} registros`;
                     list.appendChild(li);
                 }
+            }
+
+            // BUGFIX DATA: nova seção de auditoria mostrando exatamente
+            // quantas milhares foram atribuídas a cada data detectada,
+            // deixando visível se alguma milhar caiu em "SEM-DATA-DETECTADA"
+            // em vez de ficar oculto atrás de uma data hardcoded.
+            const datesList = document.getElementById('auditDatesList');
+            datesList.innerHTML = '';
+            const dateEntries = Object.entries(audit.dateCounts || {});
+            if (dateEntries.length === 0) {
+                const li = document.createElement('li');
+                li.innerText = 'Nenhuma milhar processada.';
+                datesList.appendChild(li);
+            } else {
+                dateEntries.forEach(([date, count]) => {
+                    const li = document.createElement('li');
+                    if (date === audit.noDateLabel) {
+                        li.className = 'warning-item';
+                        li.innerText = `⚠ ${date}: ${count} registros (nenhuma linha "Dia DD/MM/AAAA" foi encontrada antes destes sorteios)`;
+                    } else {
+                        li.innerText = `${date}: ${count} registros`;
+                    }
+                    datesList.appendChild(li);
+                });
             }
         }
 
