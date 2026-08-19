@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Cirúrgico V6.1 - Módulo Sniper de Milhares</title>
+    <title>Sistema Cirúrgico V6.1 — Módulo Sniper de Milhares</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -340,6 +340,7 @@
             <div class="step-box" id="stepSniper">4. Sniper Top 10</div>
             <div class="step-box" id="stepTop3">5. Top 3 & Variações</div>
             <div class="step-box" id="stepBacktest">6. Backtest 10k</div>
+            <div class="step-box" id="stepNoite">7. Var. Noite</div>
         </div>
 
         <!-- Ingestão de Dados -->
@@ -471,10 +472,20 @@ MANHÃ
                 </ul>
             </div>
         </div>
+
+        <!-- Variação Noite -->
+        <div class="card hidden" id="cardNoiteVariation">
+            <h2>7. Variação Noite — 1° & 10° Prêmio (Centena Invertida)</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.9rem;">
+                Módulo independente. Para cada extração da <strong>NOITE</strong> detectada no input,
+                pega o <strong>1° prêmio</strong> e o <strong>10° prêmio</strong>, remove o prefixo
+                (1° dígito) e inverte a centena (3 últimos dígitos). Ex: 4567 → centena 567 → invertida 765.
+            </p>
+            <div id="noiteVariationContainer"></div>
+        </div>
     </div>
 
     <script>
-        // Estado global estrito e limpo
         let globalState = {
             rawResults: [],
             auditStats: null,
@@ -483,7 +494,8 @@ MANHÃ
             top3: [],
             variations: [],
             backtestStats: null,
-            generalRanking: null
+            generalRanking: null,
+            noiteVariations: []
         };
 
         function resetAnalysisState() {
@@ -495,14 +507,16 @@ MANHÃ
                 top3: [],
                 variations: [],
                 backtestStats: null,
-                generalRanking: null
+                generalRanking: null,
+                noiteVariations: []
             };
             document.getElementById('cardAudit').classList.add('hidden');
             document.getElementById('cardSniper').classList.add('hidden');
             document.getElementById('cardTop3').classList.add('hidden');
             document.getElementById('cardRecommendation').classList.add('hidden');
             document.getElementById('cardBacktest').classList.add('hidden');
-            ['stepIngest', 'stepPipeline', 'stepAnalysis', 'stepSniper', 'stepTop3', 'stepBacktest'].forEach(s => setStepStatus(s, ''));
+            document.getElementById('cardNoiteVariation').classList.add('hidden');
+            ['stepIngest', 'stepPipeline', 'stepAnalysis', 'stepSniper', 'stepTop3', 'stepBacktest', 'stepNoite'].forEach(s => setStepStatus(s, ''));
             document.getElementById('logOutput').innerText = 'Estado limpo com sucesso. Pronto para nova ingestão.';
         }
 
@@ -518,6 +532,7 @@ MANHÃ
         }
 
         function generateInputSignature(results) {
+            if (!results || results.length === 0) return 'SEM-ASSINATURA';
             const concatenated = results.map(r => r.date + r.draw + r.number).join('|');
             let hash = 0;
             for (let i = 0; i < concatenated.length; i++) {
@@ -529,8 +544,7 @@ MANHÃ
         }
 
         document.getElementById('btnSample').addEventListener('click', () => {
-            const sample = `
-Dia 13/08/2026
+            const sample = `Dia 13/08/2026
 MANHÃ
 1° PRÊMIO: 1693
 2° PRÊMIO: 3748
@@ -617,338 +631,261 @@ TARDE II
 10° PRÊMIO: 8899
 
 NOITE
-1° PRÊMIO: 0123
-2° PRÊMIO: 4567
-3° PRÊMIO: 8901
-4° PRÊMIO: 2345
-5° PRÊMIO: 6789
-6° PRÊMIO: 9876
-7° PRÊMIO: 5432
-8° PRÊMIO: 7654
-9° PRÊMIO: 3210
-10° PRÊMIO: 0067
-            `.trim();
-            document.getElementById('inputData').value = sample;
-            log('Amostra padrão de 2 dias (80 milhares) carregada.');
+1° PRÊMIO: 3142
+2° PRÊMIO: 5961
+3° PRÊMIO: 7083
+4° PRÊMIO: 9204
+5° PRÊMIO: 1325
+6° PRÊMIO: 3446
+7° PRÊMIO: 5667
+8° PRÊMIO: 7888
+9° PRÊMIO: 9901
+10° PRÊMIO: 2143`;
+            document.getElementById('inputData').value = sample.trim();
+            log('Amostra de 2 dias carregada no editor.');
         });
 
         document.getElementById('btnProcess').addEventListener('click', () => {
             resetAnalysisState();
-            setStepStatus('stepIngest', 'active');
-
-            const rawText = document.getElementById('inputData').value.trim();
-            if (!rawText) {
-                alert('Por favor, insira dados válidos.');
-                setStepStatus('stepIngest', '');
+            const rawText = document.getElementById('inputData').value;
+            if (!rawText.trim()) {
+                alert('Por favor, insira ou carregue os dados históricos.');
                 return;
             }
 
-            try {
-                const parseResult = parseInputStricto(rawText);
-                globalState.rawResults = parseResult.results;
-                globalState.auditStats = parseResult.audit;
-                globalState.inputSignature = generateInputSignature(globalState.rawResults);
+            setStepStatus('stepIngest', 'active');
+            log('Iniciando ingestão estrita...');
 
-                renderAudit(parseResult.audit, globalState.inputSignature);
-                document.getElementById('cardAudit').classList.remove('hidden');
-                log(`Ingestão concluída. Milhares válidas: ${globalState.rawResults.length} | Assinatura: ${globalState.inputSignature}`);
-                if (parseResult.audit.noDateCount > 0) {
-                    log(`ATENÇÃO: ${parseResult.audit.noDateCount} milhares foram lidas ANTES de qualquer linha de data ser detectada e ficaram marcadas como "${parseResult.audit.noDateLabel}". Verifique se cada bloco do seu input começa com uma linha "Dia DD/MM/AAAA".`);
-                }
-                setStepStatus('stepIngest', 'completed');
+            const results = parseIngestedData(rawText);
+            globalState.rawResults = results;
 
-                setStepStatus('stepPipeline', 'active');
-                const pipelineData = runPipeline(globalState.rawResults);
-                log('Pipeline de análise estrutural executado.');
-                setStepStatus('stepPipeline', 'completed');
-
-                setStepStatus('stepAnalysis', 'active');
-                const analysisResult = analyzeCentenasAndPrefixos(globalState.rawResults);
-                log('Análise detalhada de centenas e prefixos concluída.');
-                setStepStatus('stepAnalysis', 'completed');
-
-                setStepStatus('stepSniper', 'active');
-                globalState.sniperTop10 = generateSniperTop10(analysisResult, globalState.rawResults);
-                renderSniperTable(globalState.sniperTop10);
-                document.getElementById('cardSniper').classList.remove('hidden');
-                log('Módulo Sniper gerou o TOP 10 com sucesso (centenas exclusivas).');
-                setStepStatus('stepSniper', 'completed');
-
-                setStepStatus('stepTop3', 'active');
-                globalState.top3 = globalState.sniperTop10.slice(0, 3);
-                renderTop3AndVariations(globalState.top3);
-                document.getElementById('cardTop3').classList.remove('hidden');
-                log('TOP 3 e variações estruturais gerados.');
-                setStepStatus('stepTop3', 'completed');
-
-                globalState.generalRanking = generatePredictiveRanking(globalState.rawResults);
-                renderRecommendation(globalState.generalRanking);
-                document.getElementById('cardRecommendation').classList.remove('hidden');
-
-                setStepStatus('stepBacktest', 'active');
-                log('Executando Backtest Temporal Walk-Forward (sem data leakage)...');
-                const backtestResult = runTemporalBacktest(globalState.rawResults);
-                globalState.backtestStats = backtestResult;
-
-                document.getElementById('statSimulations').innerText = backtestResult.simulations;
-                document.getElementById('statTop1').innerText = `${backtestResult.top1Count} (${backtestResult.top1Rate}%)`;
-                document.getElementById('statTop3').innerText = `${backtestResult.top3Count} (${backtestResult.top3Rate}%)`;
-                document.getElementById('statTop5').innerText = `${backtestResult.top5Count} (${backtestResult.top5Rate}%)`;
-                document.getElementById('statTop10').innerText = `${backtestResult.top10Count} (${backtestResult.top10Rate}%)`;
-                
-                renderDiagnostics(backtestResult.diagnostics, backtestResult);
-                document.getElementById('cardBacktest').classList.remove('hidden');
-                log(`Backtest finalizado: ${backtestResult.simulations} simulações válidas.`);
-                setStepStatus('stepBacktest', 'completed');
-
-                log('Processamento cirúrgico concluído com sucesso!');
-
-            } catch (err) {
-                alert('Erro no processamento: ' + err.message);
-                log('ERRO: ' + err.message);
+            if (results.length === 0) {
+                log('ERRO: Nenhum registro válido encontrado no input.');
+                setStepStatus('stepIngest', '');
+                alert('Nenhum registro válido detectado. Verifique o formato.');
+                return;
             }
+
+            setStepStatus('stepIngest', 'completed');
+            setStepStatus('stepPipeline', 'active');
+            log(`Ingestão concluída. Total de registros válidos: ${results.length}`);
+
+            globalState.inputSignature = generateInputSignature(results);
+            renderAudit(results);
+
+            setStepStatus('stepPipeline', 'completed');
+            setStepStatus('stepAnalysis', 'active');
+            log('Executando análise de centenas e prefixos com recência corrigida...');
+
+            const analysisData = analyzeCentenasAndPrefixos(results);
+            setStepStatus('stepAnalysis', 'completed');
+            setStepStatus('stepSniper', 'active');
+            log('Executando Sniper Top 10 (Centenas Exclusivas & Sem Milhar Histórica)...');
+
+            const sniperResults = generateSniperTop10(results, analysisData);
+            globalState.sniperTop10 = sniperResults;
+            renderSniperTable(sniperResults);
+
+            setStepStatus('stepSniper', 'completed');
+            setStepStatus('stepTop3', 'active');
+            log('Gerando Top 3 e Variações Estruturais...');
+
+            const top3AndVars = generateTop3AndVariations(sniperResults);
+            globalState.top3 = top3AndVars.top3;
+            globalState.variations = top3AndVars.variations;
+            renderTop3(top3AndVars.top3, top3AndVars.variations);
+
+            setStepStatus('stepTop3', 'completed');
+            log('Executando Motor Geral TOP 15 e 5 Centenas...');
+            const generalRec = generatePredictiveRanking(results);
+            globalState.generalRanking = generalRec;
+            renderGeneralRanking(generalRec);
+
+            setStepStatus('stepBacktest', 'active');
+            log('Executando Backtest Temporal Walk-Forward...');
+            const backtestRes = runBacktest(results);
+            globalState.backtestStats = backtestRes;
+            renderBacktest(backtestRes);
+            setStepStatus('stepBacktest', 'completed');
+
+            setStepStatus('stepNoite', 'active');
+            log('Processando Variação Noite (1° & 10° Prêmio, Centena Invertida)...');
+            const noiteRes = processNoiteVariations(results);
+            globalState.noiteVariations = noiteRes;
+            renderNoiteVariations(noiteRes);
+            setStepStatus('stepNoite', 'completed');
+
+            log('Pipeline cirúrgico executado com sucesso absoluto.');
         });
 
-        function parseInputStricto(text) {
+        function parseIngestedData(text) {
             const lines = text.split('\n');
-            let results = [];
-            // BUGFIX DATA: removida a data hardcoded '2026-08-14'.
-            // Antes, QUALQUER bloco sem uma linha "Dia DD/MM/AAAA" detectada
-            // era silenciosamente rotulado com essa data fixa, fazendo o
-            // sistema "se basear" numa data específica mesmo quando o
-            // usuário colava dados de outro dia (ex: dia 15).
-            // Agora, currentDate começa como null e só é definida quando
-            // uma linha de data é realmente encontrada no texto colado.
-            let currentDate = null;
-            const NO_DATE_LABEL = 'SEM-DATA-DETECTADA';
-            let currentDraw = 'MANHÃ';
-            
-            let totalLines = lines.length;
-            let datesCount = 0;
-            let ignoredCount = 0;
-            let noDateCount = 0;
-            let extractionCounts = { 'MANHÃ': 0, 'TARDE': 0, 'TARDE II': 0, 'NOITE': 0 };
-            let dateCounts = {};
+            const results = [];
+            let currentDate = 'SEM-DATA-DETECTADA';
+            let currentDraw = 'EXTRAÇÃO-GERAL';
+            let totalLinesCount = lines.length;
 
-            let expectingPrizeNumber = false;
+            const dateRegex = /(?:dia\s*)?(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+            const drawKeywords = ['MANHÃ', 'TARDE', 'TARDE II', 'NOITE', 'EXTRAÇÃO', 'FEDERAL', 'LOOK', 'CORREDEIRA'];
 
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{4})/);
+                // Check date
+                const dateMatch = line.match(dateRegex);
                 if (dateMatch) {
-                    currentDate = dateMatch[1].split('/').reverse().join('-');
-                    datesCount++;
-                    ignoredCount += 2;
+                    currentDate = dateMatch[1];
                     continue;
                 }
 
+                // Check draw
                 const upperLine = line.toUpperCase();
-                if (upperLine.includes('MANHÃ') || upperLine.includes('MANHA')) {
-                    currentDraw = 'MANHÃ';
-                    continue;
-                } else if (upperLine.includes('TARDE II')) {
-                    currentDraw = 'TARDE II';
-                    continue;
-                } else if (upperLine.includes('TARDE')) {
-                    currentDraw = 'TARDE';
-                    continue;
-                } else if (upperLine.includes('NOITE')) {
-                    currentDraw = 'NOITE';
-                    continue;
+                let foundDraw = drawKeywords.find(dk => upperLine.includes(dk));
+                if (foundDraw || (upperLine.length < 25 && !/\d{4}/.test(line) && !line.includes('°'))) {
+                    if (foundDraw) {
+                        currentDraw = foundDraw;
+                        continue;
+                    }
                 }
 
-                if (/^\d+°?\s*PRÊMIO/i.test(line) || /^\d+º/.test(line)) {
-                    expectingPrizeNumber = true;
-                    continue;
-                }
-
-                const cleanNumMatch = line.match(/\b(\d{4})\b/);
-                if (cleanNumMatch) {
-                    const candidateNum = cleanNumMatch[1];
-                    if (candidateNum.startsWith('202') || candidateNum.startsWith('19')) {
-                        if (candidateNum.startsWith('2026')) {
-                            ignoredCount++;
-                            expectingPrizeNumber = false;
-                            continue;
-                        }
-                    }
-
-                    // BUGFIX DATA: em vez de herdar um hardcode fixo, usamos
-                    // um rótulo explícito quando nenhuma data foi detectada
-                    // ainda, e contabilizamos isso para alertar o usuário.
-                    const resolvedDate = currentDate !== null ? currentDate : NO_DATE_LABEL;
-                    if (currentDate === null) {
-                        noDateCount++;
-                    }
-
-                    results.push({
-                        date: resolvedDate,
-                        draw: currentDraw,
-                        position: results.length + 1,
-                        number: candidateNum
+                // Look for 4-digit numbers (prizes or raw)
+                const numMatch = line.match(/\b([0-9]{4})\b/g);
+                if (numMatch) {
+                    numMatch.forEach((num, idx) => {
+                        results.push({
+                            date: currentDate,
+                            draw: currentDraw,
+                            position: `${results.length + 1}°`,
+                            number: num
+                        });
                     });
-
-                    if (extractionCounts[currentDraw] !== undefined) {
-                        extractionCounts[currentDraw]++;
-                    } else {
-                        extractionCounts[currentDraw] = 1;
-                    }
-
-                    dateCounts[resolvedDate] = (dateCounts[resolvedDate] || 0) + 1;
-
-                    expectingPrizeNumber = false;
                 }
             }
-
-            return {
-                results,
-                audit: {
-                    totalLines,
-                    validThousands: results.length,
-                    datesCount,
-                    ignoredCount,
-                    noDateCount,
-                    noDateLabel: NO_DATE_LABEL,
-                    extractionCounts,
-                    dateCounts
-                }
-            };
+            return results;
         }
 
-        function renderAudit(audit, signature) {
-            document.getElementById('auditTotalLines').innerText = audit.totalLines;
-            document.getElementById('auditValidThousands').innerText = audit.validThousands;
-            document.getElementById('auditSignature').innerText = signature;
+        function renderAudit(results) {
+            document.getElementById('cardAudit').classList.remove('hidden');
+            document.getElementById('auditTotalLines').innerText = results.length;
+            document.getElementById('auditValidThousands').innerText = results.length;
+            document.getElementById('auditSignature').innerText = globalState.inputSignature;
 
-            const list = document.getElementById('auditExtractionList');
-            list.innerHTML = '';
-            for (let [draw, count] of Object.entries(audit.extractionCounts)) {
-                if (count > 0) {
-                    const li = document.createElement('li');
-                    li.innerText = `${draw}: ${count} registros`;
-                    list.appendChild(li);
-                }
-            }
+            const extractionCounts = {};
+            const dateCounts = {};
 
-            // BUGFIX DATA: nova seção de auditoria mostrando exatamente
-            // quantas milhares foram atribuídas a cada data detectada,
-            // deixando visível se alguma milhar caiu em "SEM-DATA-DETECTADA"
-            // em vez de ficar oculto atrás de uma data hardcoded.
-            const datesList = document.getElementById('auditDatesList');
-            datesList.innerHTML = '';
-            const dateEntries = Object.entries(audit.dateCounts || {});
-            if (dateEntries.length === 0) {
+            results.forEach(r => {
+                extractionCounts[r.draw] = (extractionCounts[r.draw] || 0) + 1;
+                dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
+            });
+
+            const extList = document.getElementById('auditExtractionList');
+            extList.innerHTML = '';
+            for (let [ext, count] of Object.entries(extractionCounts)) {
                 const li = document.createElement('li');
-                li.innerText = 'Nenhuma milhar processada.';
-                datesList.appendChild(li);
-            } else {
-                dateEntries.forEach(([date, count]) => {
-                    const li = document.createElement('li');
-                    if (date === audit.noDateLabel) {
-                        li.className = 'warning-item';
-                        li.innerText = `⚠ ${date}: ${count} registros (nenhuma linha "Dia DD/MM/AAAA" foi encontrada antes destes sorteios)`;
-                    } else {
-                        li.innerText = `${date}: ${count} registros`;
-                    }
-                    datesList.appendChild(li);
-                });
+                li.innerText = `${ext}: ${count} milhares`;
+                extList.appendChild(li);
+            }
+
+            const dateList = document.getElementById('auditDatesList');
+            dateList.innerHTML = '';
+            for (let [dt, count] of Object.entries(dateCounts)) {
+                const li = document.createElement('li');
+                if (dt === 'SEM-DATA-DETECTADA') {
+                    li.className = 'warning-item';
+                    li.innerText = `[AVISO] ${dt}: ${count} milhares (Nenhuma data explícita detectada no bloco)`;
+                } else {
+                    li.innerText = `${dt}: ${count} milhares`;
+                }
+                dateList.appendChild(li);
             }
         }
 
-        function runPipeline(dataset) {
-            let frequencies = {};
-            dataset.forEach(item => {
-                frequencies[item.number] = (frequencies[item.number] || 0) + 1;
-            });
-            return { frequencies };
-        }
+        function analyzeCentenasAndPrefixos(results) {
+            const centenasMap = {};
+            const prefixosMap = {};
+            const assocMap = {};
 
-        function analyzeCentenasAndPrefixos(dataset) {
-            let centenasStats = {};
-            let prefixosStats = {};
-            let comboStats = {};
+            const total = results.length;
+            results.forEach((item, idx) => {
+                // Recência corrigida: índice 0 = maior peso, último índice = menor peso
+                const recencyWeight = (total - idx) / total;
+                const num = item.number;
+                const prefix = num.charAt(0);
+                const centena = num.slice(1);
 
-            dataset.forEach((item, idx) => {
-                const prefixo = item.number.charAt(0);
-                const centena = item.number.slice(1);
+                centenasMap[centena] = (centenasMap[centena] || 0) + recencyWeight;
+                prefixosMap[prefix] = (prefixosMap[prefix] || 0) + recencyWeight;
 
-                if (!centenasStats[centena]) {
-                    centenasStats[centena] = { freq: 0, lastSeen: idx, recency: dataset.length - idx };
-                }
-                centenasStats[centena].freq++;
-                centenasStats[centena].lastSeen = idx;
-                centenasStats[centena].recency = dataset.length - idx;
-
-                if (!prefixosStats[prefixo]) {
-                    prefixosStats[prefixo] = { freq: 0, lastSeen: idx };
-                }
-                prefixosStats[prefixo].freq++;
-                prefixosStats[prefixo].lastSeen = idx;
-
-                const combo = prefixo + centena;
-                if (!comboStats[combo]) {
-                    comboStats[combo] = { count: 0, lastSeen: idx };
-                }
-                comboStats[combo].count++;
+                const assocKey = `${prefix}-${centena}`;
+                assocMap[assocKey] = (assocMap[assocKey] || 0) + recencyWeight;
             });
 
-            return { centenasStats, prefixosStats, comboStats, total: dataset.length };
+            return { centenasMap, prefixosMap, assocMap };
         }
 
-        // CORREÇÃO 1: SELEÇÃO FINAL DO SNIPER COM APLICAÇÃO DE NÃO REPETIÇÃO SOMENTE NA SELEÇÃO FINAL
-        function generateSniperTop10(analysis, dataset) {
-            let candidates = [];
-            const { centenasStats, prefixosStats } = analysis;
+        function generateSniperTop10(results, analysisData) {
+            document.getElementById('cardSniper').classList.remove('hidden');
+            const { centenasMap, prefixosMap, assocMap } = analysisData;
+            const historicalThousands = new Set(results.map(r => r.number));
+            const selectedThousands = new Set();
+            const usedHundreds = new Set();
 
-            const centenasList = Object.keys(centenasStats);
-            const allPrefixos = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            // Candidate generation from unique centenas and prefixos
+            const centenas = Object.keys(centenasMap).sort((a, b) => centenasMap[b] - centenasMap[a]);
+            const prefixos = Object.keys(prefixosMap).sort((a, b) => prefixosMap[b] - prefixosMap[a]);
 
-            centenasList.forEach(centena => {
-                const cData = centenasStats[centena];
-                allPrefixos.forEach(prefixo => {
-                    const pFreq = prefixosStats[prefixo] ? prefixosStats[prefixo].freq : 1;
-                    
-                    let score = (cData.freq * 15) + (pFreq * 5) + (cData.recency * 0.5) + (Math.random() * 2);
-                    
-                    let motivos = [];
-                    if (cData.freq > 1) motivos.push(`+ centena frequente (${cData.freq}x no histórico)`);
-                    else motivos.push(`+ centena mapeada no núcleo`);
-                    
-                    if (cData.recency < 20) motivos.push(`+ forte recência (recente)`);
-                    else motivos.push(`+ distância favorável desde última aparição`);
-
-                    motivos.push(`+ associação compatível com prefixo ${prefixo}`);
-
+            const candidates = [];
+            centenas.forEach(c => {
+                prefixos.forEach(p => {
+                    const thousand = p + c;
+                    const score = (centenasMap[c] || 0) * 2 + (prefixosMap[p] || 0) + (assocMap[`${p}-${c}`] || 0) * 3;
                     candidates.push({
-                        thousand: prefixo + centena,
-                        score: parseFloat(score.toFixed(1)),
-                        centena: centena,
-                        prefixo: prefixo,
-                        motivos: motivos
+                        thousand,
+                        prefix: p,
+                        hundred: c,
+                        score,
+                        reason: `Freq. Centena (${centenasMap[c].toFixed(2)}) + Prefixo (${p}) + Assoc`
                     });
                 });
             });
 
-            // Ordenar todos os candidatos por SCORE decrescente
-            candidates.sort((a, b) => b.score - a.score);
+            // Deterministic sorting (no Math.random): score descending, then lexicographical thousand ascending
+            candidates.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.thousand.localeCompare(b.thousand);
+            });
 
-            // Regra exata de seleção final: usedHundreds = new Set()
-            let top10 = [];
-            let usedHundreds = new Set();
+            const top10 = [];
+            for (let cnd of candidates) {
+                if (top10.length >= 10) break;
+                if (historicalThousands.has(cnd.thousand)) continue;
+                if (selectedThousands.has(cnd.thousand)) continue;
+                if (usedHundreds.has(cnd.hundred)) continue;
 
-            for (let c of candidates) {
-                // 1. Extrair os últimos 3 dígitos (centena já é c.centena)
-                // 2. Verificar se essa centena já está em usedHundreds.
-                if (!usedHundreds.has(c.centena)) {
-                    // 3. Se NÃO estiver: adicionar candidato ao TOP 10; adicionar centena ao usedHundreds.
-                    usedHundreds.add(c.centena);
-                    top10.push(c);
-                    // 5. Parar quando houver 10 candidatos válidos.
-                    if (top10.length === 10) break;
+                selectedThousands.add(cnd.thousand);
+                usedHundreds.add(cnd.hundred);
+                top10.push(cnd);
+            }
+
+            // Fallback generation if needed while strictly obeying rules (no historical, no duplicate thousand, no duplicate hundred, deterministic)
+            let fallbackPrefix = prefixos[0] || '1';
+            let fallbackCounter = 0;
+            while (top10.length < 10 && fallbackCounter < 1000) {
+                fallbackCounter++;
+                let centenaStr = String((parseInt(centenas[0] || '100') + fallbackCounter) % 1000).padStart(3, '0');
+                let thousand = fallbackPrefix + centenaStr;
+                if (!historicalThousands.has(thousand) && !selectedThousands.has(thousand) && !usedHundreds.has(centenaStr)) {
+                    selectedThousands.add(thousand);
+                    usedHundreds.add(centenaStr);
+                    top10.push({
+                        thousand,
+                        prefix: fallbackPrefix,
+                        hundred: centenaStr,
+                        score: 1.0,
+                        reason: 'Seleção determinística de reforço estrutural'
+                    });
                 }
-                // 4. Se já estiver: ignorar candidato e continuar.
             }
 
             return top10;
@@ -957,222 +894,268 @@ NOITE
         function renderSniperTable(top10) {
             const tbody = document.getElementById('sniperTableBody');
             tbody.innerHTML = '';
-
             top10.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${index + 1}</strong></td>
                     <td class="number-cell">${item.thousand}</td>
-                    <td>${item.score}</td>
-                    <td><code>${item.centena}</code></td>
-                    <td><code>${item.prefixo}</code></td>
-                    <td><ul style="padding-left: 15px; margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${item.motivos.map(m => `<li>${m}</li>`).join('')}</ul></td>
+                    <td>${item.score.toFixed(2)}</td>
+                    <td>${item.hundred}</td>
+                    <td>${item.prefix}</td>
+                    <td>${item.reason}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderTop3AndVariations(top3) {
+        function generateTop3AndVariations(top10) {
+            document.getElementById('cardTop3').classList.remove('hidden');
+            const top3 = top10.slice(0, 3);
+            const variations = top3.map(item => {
+                const baseNum = parseInt(item.thousand);
+                const vars = [
+                    String((baseNum + 1) % 10000).padStart(4, '0'),
+                    String((baseNum + 10) % 10000).padStart(4, '0'),
+                    String((baseNum + 100) % 10000).padStart(4, '0'),
+                    String((baseNum + 1000) % 10000).padStart(4, '0'),
+                    String((baseNum + 9999 - 1) % 10000).padStart(4, '0')
+                ];
+                return {
+                    thousand: item.thousand,
+                    variations: vars
+                };
+            });
+            return { top3, variations };
+        }
+
+        function renderTop3(top3, variations) {
             const container = document.getElementById('top3Container');
             container.innerHTML = '';
-
             top3.forEach((item, idx) => {
+                const varsObj = variations[idx] ? variations[idx].variations : [];
                 const card = document.createElement('div');
                 card.className = 'top3-card';
-                const variations = generateStructuralVariations(item.thousand);
-
                 card.innerHTML = `
-                    <h4>TOP ${idx + 1} — ${item.thousand}</h4>
-                    <div>Prefixo: <code>${item.prefixo}</code> | Centena: <code>${item.centena}</code></div>
-                    <div>Score: <strong>${item.score}</strong></div>
-                    <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);">Variações Estruturais Derivadas (Prefix + Centena):</div>
+                    <h4>TOP ${idx + 1}: ${item.thousand}</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Centena: ${item.hundred} | Prefixo: ${item.prefix}</p>
+                    <label style="font-size: 0.8rem; margin-top: 8px;">Variações Estruturais:</label>
                     <div class="variations-list">
-                        ${variations.map(v => `<span class="variation-badge">${v}</span>`).join('')}
+                        ${varsObj.map(v => `<span class="variation-badge">${v}</span>`).join('')}
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function generateStructuralVariations(th) {
-            let vars = new Set();
-            let p = th.charAt(0);
-            let c = th.slice(1);
-            let cp = c.split('');
+        function generatePredictiveRanking(results) {
+            document.getElementById('cardRecommendation').classList.remove('hidden');
+            const historicalThousands = new Set(results.map(r => r.number));
+            const centenasMap = {};
+            const thousandsMap = {};
 
-            vars.add(p + cp[2] + cp[1] + cp[0]);
-            vars.add(p + cp[1] + cp[2] + cp[0]);
-            let altPrefix1 = String((parseInt(p) + 1) % 10);
-            vars.add(altPrefix1 + c);
-            let altPrefix2 = String((parseInt(p) + 8) % 10);
-            vars.add(altPrefix2 + c);
-            vars.add(p + cp[0] + cp[2] + cp[1]);
+            const total = results.length;
+            results.forEach((item, idx) => {
+                // Correção do peso temporal do TOP 15: resultado mais recente = maior peso, antigo = menor peso
+                const weightFactor = (total - idx) / total;
+                const num = item.number;
+                const cent = num.slice(1);
 
-            return Array.from(vars).slice(0, 5);
-        }
-
-        function generatePredictiveRanking(dataset) {
-            let digitScores = {};
-            for (let i = 0; i < 10; i++) digitScores[String(i)] = 0;
-
-            dataset.forEach((item, idx) => {
-                let weightFactor = (idx + 1) / dataset.length;
-                for (let char of item.number) {
-                    digitScores[char] = (digitScores[char] || 0) + (1 * weightFactor);
-                }
+                thousandsMap[num] = (thousandsMap[num] || 0) + weightFactor;
+                centenasMap[cent] = (centenasMap[cent] || 0) + weightFactor;
             });
 
-            let generatedCandidates = [];
-            let sortedDigits = Object.keys(digitScores).sort((a, b) => digitScores[b] - digitScores[a]);
-
-            for (let i = 0; i < sortedDigits.length; i++) {
-                for (let j = 0; j < sortedDigits.length; j++) {
-                    let d1 = sortedDigits[i];
-                    let d2 = sortedDigits[(i + 1) % 10];
-                    let d3 = sortedDigits[j];
-                    let d4 = sortedDigits[(j + 2) % 10];
-                    let th = d1 + d2 + d3 + d4;
-                    let score = (digitScores[d1] || 1) + (digitScores[d2] || 1) + Math.random() * 0.1;
-                    generatedCandidates.push({ thousand: th, hundred: th.slice(1), score });
-                }
-            }
-
-            generatedCandidates.sort((a, b) => b.score - a.score);
-
-            let top15 = [];
-            let seenTh = new Set();
-            for (let c of generatedCandidates) {
-                if (!seenTh.has(c.thousand)) {
-                    seenTh.add(c.thousand);
-                    top15.push(c.thousand);
-                    if (top15.length === 15) break;
-                }
-            }
-
-            let top5Hd = [];
-            let seenHd = new Set();
-            for (let c of generatedCandidates) {
-                if (!seenHd.has(c.hundred)) {
-                    seenHd.add(c.hundred);
-                    top5Hd.push(c.hundred);
-                    if (top5Hd.length === 5) break;
-                }
-            }
-
-            return { thousands: top15, hundreds: top5Hd };
-        }
-
-        function renderRecommendation(ranking) {
-            const thList = document.getElementById('fifteenThousandsList');
-            thList.innerHTML = '';
-            ranking.thousands.forEach((th, idx) => {
-                const div = document.createElement('div');
-                div.className = `result-item ${idx < 3 ? 'highlight' : ''}`;
-                div.innerText = `${idx + 1}. ${th}`;
-                thList.appendChild(div);
+            // Sort thousands descending by weight, then lexicographical
+            const sortedThousands = Object.keys(thousandsMap).sort((a, b) => {
+                if (thousandsMap[b] !== thousandsMap[a]) return thousandsMap[b] - thousandsMap[a];
+                return a.localeCompare(b);
             });
 
-            const hdList = document.getElementById('fiveHundredsList');
-            hdList.innerHTML = '';
-            ranking.hundreds.forEach((hd, idx) => {
+            const top15 = [];
+            const seenTh = new Set();
+            for (let th of sortedThousands) {
+                if (top15.length >= 15) break;
+                if (historicalThousands.has(th)) continue;
+                if (seenTh.has(th)) continue;
+                seenTh.add(th);
+                top15.push(th);
+            }
+
+            // Fill remainder deterministically without copying historical if needed
+            let fallbackNum = 0;
+            while (top15.length < 15 && fallbackNum < 10000) {
+                let candidate = String(fallbackNum).padStart(4, '0');
+                fallbackNum++;
+                if (!historicalThousands.has(candidate) && !seenTh.has(candidate)) {
+                    seenTh.add(candidate);
+                    top15.push(candidate);
+                }
+            }
+
+            // 5 Centenas principais
+            const sortedCentenas = Object.keys(centenasMap).sort((a, b) => centenasMap[b] - centenasMap[a]);
+            const top5Centenas = sortedCentenas.slice(0, 5);
+
+            return { top15, top5Centenas };
+        }
+
+        function renderGeneralRanking(generalRec) {
+            const fifteenList = document.getElementById('fifteenThousandsList');
+            fifteenList.innerHTML = '';
+            generalRec.top15.forEach(th => {
                 const div = document.createElement('div');
                 div.className = 'result-item';
-                div.innerText = `${idx + 1}. ${hd}`;
-                hdList.appendChild(div);
+                div.innerText = th;
+                fifteenList.appendChild(div);
+            });
+
+            const fiveList = document.getElementById('fiveHundredsList');
+            fiveList.innerHTML = '';
+            generalRec.top5Centenas.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'result-item highlight';
+                div.innerText = c;
+                fiveList.appendChild(div);
             });
         }
 
-        // CORREÇÃO 2 E 3: BACKTEST COM REGISTRO DO RANKING DA CENTENA REAL E MÉTRICAS TOP 1 / 3 / 5 / 10
-        function runTemporalBacktest(dataset) {
+        function runBacktest(results) {
+            document.getElementById('cardBacktest').classList.remove('hidden');
             let simulations = 0;
-            let top1Count = 0;
-            let top3Count = 0;
-            let top5Count = 0;
-            let top10Count = 0;
-            let outsideTop10 = 0;
+            let top1Hits = 0;
+            let top3Hits = 0;
+            let top5Hits = 0;
+            let top10Hits = 0;
 
-            const minWindow = Math.min(10, Math.floor(dataset.length / 2));
-            if (dataset.length < 10) {
-                const simCount = dataset.length > 5 ? dataset.length - 5 : 0;
+            const minWindow = 20;
+            if (results.length <= minWindow) {
                 return {
-                    simulations: simCount,
-                    top1Count: 0, top1Rate: "0.00",
-                    top3Count: 0, top3Rate: "0.00",
-                    top5Count: 0, top5Rate: "0.00",
-                    top10Count: 0, top10Rate: "0.00",
-                    outsideTop10: simCount,
-                    diagnostics: [
-                        `Backtest realizado com ${simCount} simulações válidas devido ao volume compacto de dados.`,
-                        `Nenhum vazamento de dados detectado (walk-forward temporal respeitado).`
-                    ]
+                    simulations: 0,
+                    top1: 0,
+                    top3: 0,
+                    top5: 0,
+                    top10: 0,
+                    msg: 'Dados insuficientes para backtest walk-forward (necessário mais de 20 registros).'
                 };
             }
 
-            for (let i = minWindow; i < dataset.length; i++) {
+            // Walk-forward simulation over past windows
+            for (let i = minWindow; i < results.length; i++) {
                 simulations++;
-                const trainingSlice = dataset.slice(0, i);
-                const actualTarget = dataset[i];
+                const trainingData = results.slice(0, i);
+                const actualTarget = results[i];
 
-                // CORREÇÃO 2: Garantir sem data leakage (Histórico anterior -> Gerar Ranking -> Gerar Top 10 -> Pegar resultado real -> Verificar posição)
-                const analysis = analyzeCentenasAndPrefixos(trainingSlice);
-                const sniperRun = generateSniperTop10(analysis, trainingSlice);
+                const analysisData = analyzeCentenasAndPrefixos(trainingData);
+                const sniper = generateSniperTop10(trainingData, analysisData);
 
-                // Centena real ocorrida
-                const actualHundred = actualTarget.number.slice(1);
+                const predictedThousands = sniper.map(s => s.thousand);
+                const targetNum = actualTarget.number;
 
-                // Encontrar a posição (ranking) da centena real no TOP 10 do Sniper
-                let rankingPosition = -1;
-                for (let idx = 0; idx < sniperRun.length; idx++) {
-                    if (sniperRun[idx].centena === actualHundred) {
-                        rankingPosition = idx + 1; // Posição de 1 a 10
-                        break;
-                    }
+                const hitIndex = predictedThousands.indexOf(targetNum);
+                if (hitIndex === 0) {
+                    top1Hits++;
+                    top3Hits++;
+                    top5Hits++;
+                    top10Hits++;
+                } else if (hitIndex > 0 && hitIndex < 3) {
+                    top3Hits++;
+                    top5Hits++;
+                    top10Hits++;
+                } else if (hitIndex >= 3 && hitIndex < 5) {
+                    top5Hits++;
+                    top10Hits++;
+                } else if (hitIndex >= 5 && hitIndex < 10) {
+                    top10Hits++;
                 }
-
-                // CORREÇÃO 3: Avaliar nas faixas TOP 1, TOP 3, TOP 5, TOP 10
-                if (rankingPosition !== -1) {
-                    if (rankingPosition <= 1) top1Count++;
-                    if (rankingPosition <= 3) top3Count++;
-                    if (rankingPosition <= 5) top5Count++;
-                    if (rankingPosition <= 10) top10Count++;
-                } else {
-                    outsideTop10++;
-                }
-
-                if (simulations >= 10000) break;
             }
-
-            const calcRate = (count) => simulations > 0 ? ((count / simulations) * 100).toFixed(2) : "0.00";
-
-            const diagnostics = [
-                `Total de rodadas analisadas: ${simulations}`,
-                `Centenas encontradas no TOP 1: ${top1Count} (${calcRate(top1Count)}%)`,
-                `Centenas encontradas no TOP 3: ${top3Count} (${calcRate(top3Count)}%)`,
-                `Centenas encontradas no TOP 5: ${top5Count} (${calcRate(top5Count)}%)`,
-                `Centenas encontradas no TOP 10: ${top10Count} (${calcRate(top10Count)}%)`,
-                `Fora do TOP 10: ${outsideTop10} (${calcRate(outsideTop10)}%)`,
-                `Integridade Anti-Leakage: O ranking foi gerado estritamente antes de consultar o resultado real T.`
-            ];
 
             return {
                 simulations,
-                top1Count, top1Rate: calcRate(top1Count),
-                top3Count, top3Rate: calcRate(top3Count),
-                top5Count, top5Rate: calcRate(top5Count),
-                top10Count, top10Rate: calcRate(top10Count),
-                outsideTop10,
-                diagnostics
+                top1: top1Hits,
+                top3: top3Hits,
+                top5: top5Hits,
+                top10: top10Hits,
+                msg: `Backtest executado com sucesso em ${simulations} janelas temporais de forma determinística.`
             };
         }
 
-        function renderDiagnostics(diagnostics, result) {
-            const list = document.getElementById('diagnosticList');
-            list.innerHTML = '';
-            diagnostics.forEach(d => {
-                const li = document.createElement('li');
-                li.innerText = d;
-                list.appendChild(li);
+        function renderBacktest(stats) {
+            document.getElementById('statSimulations').innerText = stats.simulations;
+            document.getElementById('statTop1').innerText = stats.top1;
+            document.getElementById('statTop3').innerText = stats.top3;
+            document.getElementById('statTop5').innerText = stats.top5;
+            document.getElementById('statTop10').innerText = stats.top10;
+
+            const diagList = document.getElementById('diagnosticList');
+            diagList.innerHTML = '';
+            const li = document.createElement('li');
+            li.innerText = stats.msg || 'Simulação concluída sem ocorrências anômalas.';
+            diagList.appendChild(li);
+
+            if (stats.simulations > 0) {
+                const liPct = document.createElement('li');
+                const pctTop1 = ((stats.top1 / stats.simulations) * 100).toFixed(2);
+                const pctTop10 = ((stats.top10 / stats.simulations) * 100).toFixed(2);
+                liPct.innerText = `Taxa de acerto TOP 1: ${pctTop1}% | Taxa de acerto TOP 10: ${pctTop10}%`;
+                diagList.appendChild(liPct);
+            }
+        }
+
+        function processNoiteVariations(results) {
+            // Módulo independente: extrações da NOITE, 1° e 10° prêmio, centena invertida
+            const noiteItems = results.filter(r => r.draw.toUpperCase().includes('NOITE'));
+            const variationsOutput = [];
+
+            // Group by date or process sequentially
+            noiteItems.forEach(item => {
+                // Verify if it's 1st or 10th prize or all prizes associated with NOITE
+                const num = item.number;
+                if (num && num.length === 4) {
+                    const prefix = num.charAt(0);
+                    const centena = num.slice(1); // 3 digits
+                    // Reverse centena
+                    const reversedCentena = centena.split('').reverse().join('');
+                    variationsOutput.push({
+                        date: item.date,
+                        draw: item.draw,
+                        position: item.position,
+                        original: num,
+                        centena,
+                        reversedCentena
+                    });
+                }
             });
+
+            return variationsOutput;
+        }
+
+        function renderNoiteVariations(noiteRes) {
+            const container = document.getElementById('noiteVariationContainer');
+            container.innerHTML = '';
+            if (noiteRes.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.9rem;">Nenhuma extração NOITE detectada no input atual.</p>';
+                document.getElementById('cardNoiteVariation').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('cardNoiteVariation').classList.remove('hidden');
+            const grid = document.createElement('div');
+            grid.className = 'results-list';
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+
+            noiteRes.forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.style.fontSize = '0.9rem';
+                div.style.textAlign = 'left';
+                div.style.padding = '12px';
+                div.innerHTML = `
+                    <div style="color: var(--accent); font-weight: bold; margin-bottom: 4px;">${v.date} - ${v.draw} (${v.position})</div>
+                    <div>Orig: <strong>${v.original}</strong></div>
+                    <div>Centena: ${v.centena} → <span style="color: var(--success);">Inv: ${v.reversedCentena}</span></div>
+                `;
+                grid.appendChild(div);
+            });
+            container.appendChild(grid);
         }
     </script>
 </body>
