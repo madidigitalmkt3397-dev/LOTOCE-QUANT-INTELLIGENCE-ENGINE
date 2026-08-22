@@ -723,7 +723,6 @@ NOITE
             const results = [];
             let currentDate = 'SEM-DATA-DETECTADA';
             let currentDraw = 'EXTRAÇÃO-GERAL';
-            let totalLinesCount = lines.length;
 
             const dateRegex = /(?:dia\s*)?(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
             const drawKeywords = ['MANHÃ', 'TARDE', 'TARDE II', 'NOITE', 'EXTRAÇÃO', 'FEDERAL', 'LOOK', 'CORREDEIRA'];
@@ -732,14 +731,12 @@ NOITE
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                // Check date
                 const dateMatch = line.match(dateRegex);
                 if (dateMatch) {
                     currentDate = dateMatch[1];
                     continue;
                 }
 
-                // Check draw
                 const upperLine = line.toUpperCase();
                 let foundDraw = drawKeywords.find(dk => upperLine.includes(dk));
                 if (foundDraw || (upperLine.length < 25 && !/\d{4}/.test(line) && !line.includes('°'))) {
@@ -749,10 +746,9 @@ NOITE
                     }
                 }
 
-                // Look for 4-digit numbers (prizes or raw)
                 const numMatch = line.match(/\b([0-9]{4})\b/g);
                 if (numMatch) {
-                    numMatch.forEach((num, idx) => {
+                    numMatch.forEach((num) => {
                         results.push({
                             date: currentDate,
                             draw: currentDraw,
@@ -808,7 +804,6 @@ NOITE
 
             const total = results.length;
             results.forEach((item, idx) => {
-                // Recência corrigida: índice 0 = maior peso, último índice = menor peso
                 const recencyWeight = (total - idx) / total;
                 const num = item.number;
                 const prefix = num.charAt(0);
@@ -831,7 +826,6 @@ NOITE
             const selectedThousands = new Set();
             const usedHundreds = new Set();
 
-            // Candidate generation from unique centenas and prefixos
             const centenas = Object.keys(centenasMap).sort((a, b) => centenasMap[b] - centenasMap[a]);
             const prefixos = Object.keys(prefixosMap).sort((a, b) => prefixosMap[b] - prefixosMap[a]);
 
@@ -850,7 +844,6 @@ NOITE
                 });
             });
 
-            // Deterministic sorting (no Math.random): score descending, then lexicographical thousand ascending
             candidates.sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
                 return a.thousand.localeCompare(b.thousand);
@@ -868,19 +861,21 @@ NOITE
                 top10.push(cnd);
             }
 
-            // Fallback generation if needed while strictly obeying rules (no historical, no duplicate thousand, no duplicate hundred, deterministic)
-            let fallbackPrefix = prefixos[0] || '1';
-            let fallbackCounter = 0;
-            while (top10.length < 10 && fallbackCounter < 1000) {
-                fallbackCounter++;
-                let centenaStr = String((parseInt(centenas[0] || '100') + fallbackCounter) % 1000).padStart(3, '0');
-                let thousand = fallbackPrefix + centenaStr;
+            // Fallback seguro baseado nas centenas reais (sem gerar números baixos artificiais)
+            let fallbackIdx = 0;
+            while (top10.length < 10 && fallbackIdx < 500) {
+                fallbackIdx++;
+                let baseC = centenas[fallbackIdx % centenas.length] || '520';
+                let baseP = prefixos[fallbackIdx % prefixos.length] || '3';
+                let centenaStr = String((parseInt(baseC) + fallbackIdx * 29) % 1000).padStart(3, '0');
+                let thousand = baseP + centenaStr;
+
                 if (!historicalThousands.has(thousand) && !selectedThousands.has(thousand) && !usedHundreds.has(centenaStr)) {
                     selectedThousands.add(thousand);
                     usedHundreds.add(centenaStr);
                     top10.push({
                         thousand,
-                        prefix: fallbackPrefix,
+                        prefix: baseP,
                         hundred: centenaStr,
                         score: 1.0,
                         reason: 'Seleção determinística de reforço estrutural'
@@ -949,50 +944,56 @@ NOITE
 
         function generatePredictiveRanking(results) {
             document.getElementById('cardRecommendation').classList.remove('hidden');
-            const historicalThousands = new Set(results.map(r => r.number));
             const centenasMap = {};
-            const thousandsMap = {};
+            const prefixosMap = {};
 
             const total = results.length;
             results.forEach((item, idx) => {
-                // Correção do peso temporal do TOP 15: resultado mais recente = maior peso, antigo = menor peso
                 const weightFactor = (total - idx) / total;
                 const num = item.number;
+                const prefix = num.charAt(0);
                 const cent = num.slice(1);
 
-                thousandsMap[num] = (thousandsMap[num] || 0) + weightFactor;
                 centenasMap[cent] = (centenasMap[cent] || 0) + weightFactor;
+                prefixosMap[prefix] = (prefixosMap[prefix] || 0) + weightFactor;
             });
 
-            // Sort thousands descending by weight, then lexicographical
-            const sortedThousands = Object.keys(thousandsMap).sort((a, b) => {
-                if (thousandsMap[b] !== thousandsMap[a]) return thousandsMap[b] - thousandsMap[a];
-                return a.localeCompare(b);
-            });
+            const sortedCentenas = Object.keys(centenasMap).sort((a, b) => centenasMap[b] - centenasMap[a]);
+            const sortedPrefixos = Object.keys(prefixosMap).sort((a, b) => prefixosMap[b] - prefixosMap[a]);
 
             const top15 = [];
             const seenTh = new Set();
-            for (let th of sortedThousands) {
+
+            // Gerar o pool de candidatos combinando prefixos e centenas reais do dataset
+            const candidatePool = [];
+            sortedPrefixos.forEach(p => {
+                sortedCentenas.forEach(c => {
+                    candidatePool.push(p + c);
+                });
+            });
+
+            for (let th of candidatePool) {
                 if (top15.length >= 15) break;
-                if (historicalThousands.has(th)) continue;
                 if (seenTh.has(th)) continue;
                 seenTh.add(th);
                 top15.push(th);
             }
 
-            // Fill remainder deterministically without copying historical if needed
-            let fallbackNum = 0;
-            while (top15.length < 15 && fallbackNum < 10000) {
-                let candidate = String(fallbackNum).padStart(4, '0');
-                fallbackNum++;
-                if (!historicalThousands.has(candidate) && !seenTh.has(candidate)) {
+            // Fallback robusto baseado nas centenas reais (evita números baixos tipo 0001, 0002)
+            let offsetIndex = 1;
+            while (top15.length < 15 && offsetIndex < 500) {
+                const baseCentena = sortedCentenas[offsetIndex % sortedCentenas.length] || '523';
+                const basePrefix = sortedPrefixos[offsetIndex % sortedPrefixos.length] || '3';
+                const modifiedCentena = String((parseInt(baseCentena) + offsetIndex * 37) % 1000).padStart(3, '0');
+                const candidate = basePrefix + modifiedCentena;
+
+                if (!seenTh.has(candidate)) {
                     seenTh.add(candidate);
                     top15.push(candidate);
                 }
+                offsetIndex++;
             }
 
-            // 5 Centenas principais
-            const sortedCentenas = Object.keys(centenasMap).sort((a, b) => centenasMap[b] - centenasMap[a]);
             const top5Centenas = sortedCentenas.slice(0, 5);
 
             return { top15, top5Centenas };
@@ -1038,7 +1039,6 @@ NOITE
                 };
             }
 
-            // Walk-forward simulation over past windows
             for (let i = minWindow; i < results.length; i++) {
                 simulations++;
                 const trainingData = results.slice(0, i);
@@ -1101,18 +1101,13 @@ NOITE
         }
 
         function processNoiteVariations(results) {
-            // Módulo independente: extrações da NOITE, 1° e 10° prêmio, centena invertida
             const noiteItems = results.filter(r => r.draw.toUpperCase().includes('NOITE'));
             const variationsOutput = [];
 
-            // Group by date or process sequentially
             noiteItems.forEach(item => {
-                // Verify if it's 1st or 10th prize or all prizes associated with NOITE
                 const num = item.number;
                 if (num && num.length === 4) {
-                    const prefix = num.charAt(0);
-                    const centena = num.slice(1); // 3 digits
-                    // Reverse centena
+                    const centena = num.slice(1);
                     const reversedCentena = centena.split('').reverse().join('');
                     variationsOutput.push({
                         date: item.date,
